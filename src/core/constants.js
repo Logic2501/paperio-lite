@@ -1,9 +1,14 @@
-export const GRID_SIZE = 64;
-export const TICK_RATE = 8;
+export const GRID_SIZE = 36;
+export const TICK_RATE = 12;
 export const RESPAWN_PREVIEW_TICKS = TICK_RATE * 3;
-export const DEFAULT_MATCH_SECONDS = 120;
+export const DEFAULT_MATCH_SECONDS = 60;
 export const MAX_EVENT_LOG = 6;
 export const INITIAL_TERRITORY_RADIUS = 2;
+export const RESPAWN_CLEAR_RADIUS = 4;
+export const RESPAWN_ELIMINATION_SECONDS = 10;
+export const ENDLESS_LOCKOUT_VICTORY_SECONDS = 10;
+export const PERFORMANCE_SAMPLE_SIZE = 120;
+export const MAX_EFFECTS = 36;
 export const PLAYER_COLORS = [
   "#23a6d5",
   "#ff6b6b",
@@ -42,11 +47,25 @@ export const PLAYER_STATE = {
   CLOSING: "closing",
   DEAD: "dead",
   RESPAWNING: "respawning",
+  ELIMINATED: "eliminated",
 };
 
 export const GAME_MODE = {
   TIMED: "timed",
   ENDLESS: "endless",
+};
+
+export const DEFAULT_GAME_OPTIONS = {
+  aiCount: 3,
+  tickRate: TICK_RATE,
+  gridSize: GRID_SIZE,
+  mode: GAME_MODE.TIMED,
+  matchSeconds: DEFAULT_MATCH_SECONDS,
+  suppressionEnabled: false,
+  humanEnabled: true,
+  showHud: true,
+  attractMode: false,
+  maxDevicePixelRatio: 2,
 };
 
 export const AI_PROFILES = {

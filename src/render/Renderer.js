@@ -1,11 +1,15 @@
-import { GRID_SIZE } from "../core/constants.js";
+import { INITIAL_TERRITORY_RADIUS, RESPAWN_CLEAR_RADIUS } from "../core/constants.js";
 import { clamp, lerp } from "../core/utils.js";
 
 export class Renderer {
-  constructor(canvas) {
+  constructor(canvas, options = {}) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
-    this.dpr = Math.max(1, window.devicePixelRatio || 1);
+    this.maxDevicePixelRatio = options.maxDevicePixelRatio ?? 2;
+    this.gridSize = options.gridSize ?? 64;
+    this.dpr = Math.max(1, Math.min(this.maxDevicePixelRatio, window.devicePixelRatio || 1));
+    this.backgroundCanvas = document.createElement("canvas");
+    this.backgroundContext = this.backgroundCanvas.getContext("2d");
     this.resize();
   }
 
@@ -27,14 +31,20 @@ export class Renderer {
     this.canvas.height = size * this.dpr;
     this.context.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.viewportSize = size;
-    this.cellSize = size / GRID_SIZE;
+    this.cellSize = size / this.gridSize;
+    this.cacheBackground();
   }
 
   render(state) {
+    if (state.gridSize !== this.gridSize) {
+      this.gridSize = state.gridSize;
+      this.cellSize = this.viewportSize / this.gridSize;
+      this.cacheBackground();
+    }
     const ctx = this.context;
     const size = this.viewportSize;
     ctx.clearRect(0, 0, size, size);
-    this.drawBackground(ctx, size);
+    ctx.drawImage(this.backgroundCanvas, 0, 0, size, size);
     this.drawTerritory(ctx, state);
     this.drawTrails(ctx, state);
     this.drawRespawnPreviews(ctx, state);
@@ -43,11 +53,20 @@ export class Renderer {
     this.drawHudDecoration(ctx, state);
   }
 
+  cacheBackground() {
+    const ctx = this.backgroundContext;
+    const size = this.viewportSize;
+    this.backgroundCanvas.width = this.canvas.width;
+    this.backgroundCanvas.height = this.canvas.height;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.drawBackground(ctx, size);
+  }
+
   drawBackground(ctx, size) {
     ctx.fillStyle = "#fbfaf5";
     ctx.fillRect(0, 0, size, size);
 
-    for (let index = 0; index <= GRID_SIZE; index += 1) {
+    for (let index = 0; index <= this.gridSize; index += 1) {
       const offset = Math.floor(index * this.cellSize) + 0.5;
       const isMajor = index % 4 === 0;
       ctx.strokeStyle = isMajor ? "rgba(79, 58, 48, 0.055)" : "rgba(79, 58, 48, 0.024)";
@@ -64,9 +83,9 @@ export class Renderer {
   }
 
   drawTerritory(ctx, state) {
-    for (let y = 0; y < GRID_SIZE; y += 1) {
-      for (let x = 0; x < GRID_SIZE; x += 1) {
-        const ownerId = state.territory[y * GRID_SIZE + x];
+    for (let y = 0; y < state.gridSize; y += 1) {
+      for (let x = 0; x < state.gridSize; x += 1) {
+        const ownerId = state.territory[y * state.gridSize + x];
         if (!ownerId) {
           continue;
         }
@@ -148,20 +167,34 @@ export class Renderer {
         continue;
       }
 
-      const px = player.respawnPreviewPosition.x * this.cellSize;
-      const py = player.respawnPreviewPosition.y * this.cellSize;
       const blinkOn = Math.floor(player.respawnPreviewTicks / 3) % 2 === 0;
       const baseColor = darkenColor(player.color, 0.42);
       const fillAlpha = blinkOn ? 0.34 : 0.16;
       const strokeAlpha = blinkOn ? 0.68 : 0.28;
       const outline = Math.max(1.2, this.cellSize * 0.14);
+      const territorySize = INITIAL_TERRITORY_RADIUS * 2 + 1;
+      const previewLeft = (player.respawnPreviewPosition.x - INITIAL_TERRITORY_RADIUS) * this.cellSize;
+      const previewTop = (player.respawnPreviewPosition.y - INITIAL_TERRITORY_RADIUS) * this.cellSize;
+      const previewPixels = territorySize * this.cellSize;
+      const clearSize = RESPAWN_CLEAR_RADIUS * 2 + 1;
+      const clearLeft = (player.respawnPreviewPosition.x - RESPAWN_CLEAR_RADIUS) * this.cellSize;
+      const clearTop = (player.respawnPreviewPosition.y - RESPAWN_CLEAR_RADIUS) * this.cellSize;
+      const clearPixels = clearSize * this.cellSize;
 
       ctx.save();
+      ctx.strokeStyle = withAlpha(baseColor, blinkOn ? 0.45 : 0.18);
+      ctx.lineWidth = Math.max(1, this.cellSize * 0.08);
+      ctx.strokeRect(clearLeft, clearTop, clearPixels, clearPixels);
       ctx.fillStyle = withAlpha(baseColor, fillAlpha);
-      ctx.fillRect(px, py, this.cellSize, this.cellSize);
+      ctx.fillRect(previewLeft, previewTop, previewPixels, previewPixels);
       ctx.strokeStyle = withAlpha(baseColor, strokeAlpha);
       ctx.lineWidth = outline;
-      ctx.strokeRect(px - outline / 2, py - outline / 2, this.cellSize + outline, this.cellSize + outline);
+      ctx.strokeRect(
+        previewLeft - outline / 2,
+        previewTop - outline / 2,
+        previewPixels + outline,
+        previewPixels + outline,
+      );
       ctx.restore();
     }
   }

@@ -1,16 +1,19 @@
 import {
   AI_PROFILES,
-  DEFAULT_MATCH_SECONDS,
-  DIRECTIONS,
+  DEFAULT_GAME_OPTIONS,
   DIRECTION_ORDER,
+  DIRECTIONS,
+  ENDLESS_LOCKOUT_VICTORY_SECONDS,
   GAME_MODE,
-  GRID_SIZE,
   INITIAL_TERRITORY_RADIUS,
+  MAX_EFFECTS,
   OPPOSITE_DIRECTION,
+  PERFORMANCE_SAMPLE_SIZE,
   PLAYER_COLORS,
   PLAYER_STATE,
+  RESPAWN_CLEAR_RADIUS,
+  RESPAWN_ELIMINATION_SECONDS,
   RESPAWN_PREVIEW_TICKS,
-  TICK_RATE,
 } from "../core/constants.js";
 import { clamp, createRng, formatPercent, manhattanDistance, pointKey } from "../core/utils.js";
 import { createPlayer } from "./player.js";
@@ -22,18 +25,31 @@ export class Game {
     this.input = config.input;
     this.hud = config.hud;
     this.config = {
-      gridSize: GRID_SIZE,
-      aiCount: config.aiCount ?? 5,
-      tickRate: TICK_RATE,
-      mode: config.mode ?? GAME_MODE.TIMED,
-      matchSeconds: config.matchSeconds ?? DEFAULT_MATCH_SECONDS,
+      ...DEFAULT_GAME_OPTIONS,
+      ...config,
       seed: config.seed ?? Date.now(),
     };
+    this.config.aiCount = clamp(this.config.aiCount, 1, 5);
+    this.config.gridSize = clamp(this.config.gridSize, 24, 72);
+    this.config.tickRate = clamp(this.config.tickRate, 6, 18);
+    this.config.matchSeconds = clamp(this.config.matchSeconds, 30, 600);
+
     this.rng = createRng(this.config.seed);
     this.frameId = null;
     this.paused = false;
+    this.matchComplete = false;
+    this.finalResults = null;
+    this.performance = {
+      frames: 0,
+      frameMs: 0,
+      updateMs: 0,
+      renderMs: 0,
+      effectCount: 0,
+      tickRate: this.config.tickRate,
+    };
+
     this.input.attach();
-    this.hud.bind(this);
+    this.hud.bind(this, this.input);
     this.boundResize = () => this.renderer.resize();
     window.addEventListener("resize", this.boundResize);
     this.restart();
@@ -44,57 +60,118 @@ export class Game {
       cancelAnimationFrame(this.frameId);
       this.frameId = null;
     }
+
     this.mode = this.config.mode;
     this.paused = false;
+    this.matchComplete = false;
+    this.finalResults = null;
+    this.endlessLockoutTicks = 0;
+    this.endlessCountdownText = "";
+    this.input.setRestartOnAnyKey(false);
     this.ticks = 0;
     this.accumulator = 0;
     this.lastTimestamp = 0;
     this.running = false;
     this.bannerTicks = preserveBanner ? this.config.tickRate * 4 : 0;
     this.banner = preserveBanner ? this.banner : "";
-    this.events = preserveBanner ? [this.banner, ...this.events].slice(0, 24) : [];
+    this.statusMessage = "";
+    this.statusTicks = 0;
+    this.events = preserveBanner && this.banner ? [this.banner, ...(this.events ?? [])].slice(0, 24) : [];
     this.effects = [];
-    this.territory = new Uint16Array(GRID_SIZE * GRID_SIZE);
-    this.trailMap = new Uint16Array(GRID_SIZE * GRID_SIZE);
+    this.territory = new Uint16Array(this.getCellCount());
+    this.trailMap = new Uint16Array(this.getCellCount());
     this.players = [];
     this.playerMap = new Map();
     this.agents = new Map();
+
     this.spawnPlayers();
-    this.addEvent("Fresh match started.");
+    this.addEvent(this.config.attractMode ? "Demo match running." : "Fresh match started.");
     this.start();
   }
 
   toggleMode() {
-    this.config.mode = this.config.mode === GAME_MODE.TIMED ? GAME_MODE.ENDLESS : GAME_MODE.TIMED;
-    this.restart();
+    const wasPaused = this.paused;
+
+    if (this.config.mode === GAME_MODE.TIMED) {
+      this.config.mode = GAME_MODE.ENDLESS;
+      this.mode = GAME_MODE.ENDLESS;
+      this.endlessLockoutTicks = 0;
+      this.endlessCountdownText = "";
+      this.paused = wasPaused;
+      this.banner = "Endless mode engaged.";
+      this.bannerTicks = Math.max(1, Math.round(this.config.tickRate * 1.2));
+      this.addEvent(this.banner);
+      return;
+    }
+
+    this.config.mode = GAME_MODE.TIMED;
+    this.mode = GAME_MODE.TIMED;
+    this.ticks = 0;
+    this.endlessLockoutTicks = 0;
+    this.endlessCountdownText = "";
+    this.matchComplete = false;
+    this.finalResults = null;
+    this.paused = wasPaused;
+    this.input.setRestartOnAnyKey(false);
+    this.banner = `Timed mode resumed. Clock reset to ${this.config.matchSeconds}s.`;
+    this.bannerTicks = Math.max(1, Math.round(this.config.tickRate * 1.2));
+    this.addEvent(this.banner);
+  }
+
+  setTickRate(nextTickRate) {
+    const resolved = clamp(Number(nextTickRate), 6, 18);
+    if (resolved === this.config.tickRate) {
+      return;
+    }
+    this.config.tickRate = resolved;
+    this.performance.tickRate = resolved;
+    this.banner = `Speed set to ${resolved}.`;
+    this.bannerTicks = Math.max(1, Math.round(this.config.tickRate * 1.2));
+    this.addEvent(this.banner);
+  }
+
+  setMenuPause(paused) {
+    if (this.matchComplete || this.config.attractMode) {
+      return;
+    }
+    this.paused = paused;
+    this.input.clear();
   }
 
   spawnPlayers() {
-    const profiles = ["balanced", "cautious", "aggressive", "balanced", "aggressive"];
-    const spawnColumns = this.scaleSpawnFractions([0.16, 0.82, 0.82, 0.18, 0.5, 0.5]);
-    const spawnRows = this.scaleSpawnFractions([0.16, 0.18, 0.82, 0.82, 0.28, 0.72]);
-    const directions = ["right", "left", "left", "right", "down", "up"];
+    const spawnColumns = this.scaleSpawnFractions([0.16, 0.82, 0.82, 0.18, 0.5, 0.5, 0.5, 0.28]);
+    const spawnRows = this.scaleSpawnFractions([0.16, 0.18, 0.82, 0.82, 0.28, 0.72, 0.5, 0.5]);
+    const directions = ["right", "left", "left", "right", "down", "up", "right", "left"];
+    const profiles = ["balanced", "cautious", "aggressive", "balanced", "aggressive", "cautious", "balanced"];
 
-    const human = createPlayer({
-      id: 1,
-      name: "You",
-      color: PLAYER_COLORS[0],
-      isHuman: true,
-      spawn: { x: spawnColumns[0], y: spawnRows[0] },
-      direction: directions[0],
-    });
-    this.players.push(human);
-    this.playerMap.set(human.id, human);
+    let nextId = 1;
+    let spawnIndex = 0;
+
+    if (this.config.humanEnabled) {
+      const human = createPlayer({
+        id: nextId,
+        name: "You",
+        color: PLAYER_COLORS[0],
+        isHuman: true,
+        spawn: { x: spawnColumns[spawnIndex], y: spawnRows[spawnIndex] },
+        direction: directions[spawnIndex],
+      });
+      this.players.push(human);
+      this.playerMap.set(human.id, human);
+      nextId += 1;
+      spawnIndex += 1;
+    }
 
     for (let index = 0; index < this.config.aiCount; index += 1) {
+      const colorIndex = this.config.humanEnabled ? index + 1 : index;
       const player = createPlayer({
-        id: index + 2,
-        name: `AI-${index + 1}`,
-        color: PLAYER_COLORS[index + 1],
+        id: nextId + index,
+        name: this.config.attractMode && !this.config.humanEnabled ? `Demo-${index + 1}` : `AI-${index + 1}`,
+        color: PLAYER_COLORS[colorIndex],
         isHuman: false,
         aiProfile: profiles[index % profiles.length],
-        spawn: { x: spawnColumns[index + 1], y: spawnRows[index + 1] },
-        direction: directions[index + 1],
+        spawn: { x: spawnColumns[spawnIndex + index], y: spawnRows[spawnIndex + index] },
+        direction: directions[spawnIndex + index],
       });
       this.players.push(player);
       this.playerMap.set(player.id, player);
@@ -107,10 +184,11 @@ export class Game {
   }
 
   claimInitialTerritory(player) {
+    const gridSize = this.config.gridSize;
     for (let dy = -INITIAL_TERRITORY_RADIUS; dy <= INITIAL_TERRITORY_RADIUS; dy += 1) {
       for (let dx = -INITIAL_TERRITORY_RADIUS; dx <= INITIAL_TERRITORY_RADIUS; dx += 1) {
-        const x = clamp(player.position.x + dx, 0, GRID_SIZE - 1);
-        const y = clamp(player.position.y + dy, 0, GRID_SIZE - 1);
+        const x = clamp(player.position.x + dx, 0, gridSize - 1);
+        const y = clamp(player.position.y + dy, 0, gridSize - 1);
         this.setTerritory(x, y, player.id);
       }
     }
@@ -139,6 +217,13 @@ export class Game {
       return;
     }
 
+    const frameStart = performance.now();
+
+    if (this.matchComplete && this.input.consumeRestart()) {
+      this.restart();
+      return;
+    }
+
     if (this.input.consumePauseToggle()) {
       this.togglePause();
     }
@@ -150,19 +235,33 @@ export class Game {
     } else {
       this.accumulator = 0;
     }
-    const tickLength = 1 / this.config.tickRate;
 
+    const tickLength = 1 / this.config.tickRate;
+    const updateStart = performance.now();
     while (!this.paused && this.accumulator >= tickLength) {
       this.updateTick();
       this.accumulator -= tickLength;
     }
+    const updateEnd = performance.now();
 
+    const renderStart = performance.now();
     this.renderer.render(this.getRenderState());
     this.hud.update(this.getHudState());
+    const renderEnd = performance.now();
+
+    this.recordPerformance({
+      frameMs: renderEnd - frameStart,
+      updateMs: updateEnd - updateStart,
+      renderMs: renderEnd - renderStart,
+    });
+
     this.frameId = requestAnimationFrame(this.loop);
   };
 
   togglePause() {
+    if (this.matchComplete || this.config.attractMode) {
+      return;
+    }
     this.paused = !this.paused;
     this.input.clear();
     this.addEvent(this.paused ? "Paused." : "Resumed.");
@@ -176,6 +275,12 @@ export class Game {
         this.banner = "";
       }
     }
+    if (this.statusTicks > 0) {
+      this.statusTicks -= 1;
+      if (this.statusTicks === 0) {
+        this.statusMessage = "";
+      }
+    }
 
     for (const effect of this.effects) {
       effect.life -= 1;
@@ -183,9 +288,18 @@ export class Game {
     this.effects = this.effects.filter((effect) => effect.life > 0);
 
     const intents = [];
+    const suppressionTier = this.getSuppressionTier();
     for (const player of this.players) {
+      if (player.state === PLAYER_STATE.ELIMINATED) {
+        continue;
+      }
+
       if (!player.alive) {
         this.updateRespawn(player);
+        continue;
+      }
+
+      if (!player.isHuman && this.shouldFreezeAiMovement(player, suppressionTier)) {
         continue;
       }
 
@@ -221,6 +335,12 @@ export class Game {
       const remaining = this.config.matchSeconds - this.ticks / this.config.tickRate;
       if (remaining <= 0) {
         this.finishTimedMatch();
+        return;
+      }
+    } else {
+      this.evaluateEndlessVictory();
+      if (this.matchComplete) {
+        return;
       }
     }
   }
@@ -233,32 +353,45 @@ export class Game {
         player.respawnPreviewTicks = 0;
         player.respawnPreviewPosition = null;
         player.state = PLAYER_STATE.DEAD;
-        this.setRespawnStatus(player, "Respawn preview cancelled. Searching for a new opening.", true);
+        this.setRespawnStatus(player, "Respawn preview cancelled. Searching for a new safe opening.", true);
+      } else {
+        player.respawnPreviewTicks -= 1;
+        if (player.respawnPreviewTicks > 0) {
+          const remaining = Math.ceil(player.respawnPreviewTicks / this.config.tickRate);
+          this.setRespawnStatus(player, `${player.name} respawning in ${remaining}s...`);
+          return;
+        }
+
+        this.finishRespawn(player, candidate);
         return;
       }
-
-      player.respawnPreviewTicks -= 1;
-      if (player.respawnPreviewTicks > 0) {
-        const remaining = Math.ceil(player.respawnPreviewTicks / this.config.tickRate);
-        this.setRespawnStatus(player, `${player.name} respawning in ${remaining}s...`);
-        return;
-      }
-
-      this.finishRespawn(player, candidate);
-      return;
     }
 
     const spawn = this.findBestRespawnPoint(player.id);
     if (!spawn) {
       player.state = PLAYER_STATE.DEAD;
-      this.setRespawnStatus(player, `${player.name} is waiting for a safe respawn zone.`, true);
+      player.respawnBlockedTicks += 1;
+      const remainingSeconds = Math.max(
+        0,
+        Math.ceil(RESPAWN_ELIMINATION_SECONDS - player.respawnBlockedTicks / this.config.tickRate),
+      );
+      if (player.respawnBlockedTicks >= RESPAWN_ELIMINATION_SECONDS * this.config.tickRate) {
+        this.eliminatePlayer(player, `${player.name} was eliminated after 10s without a 9x9 respawn zone.`);
+        return;
+      }
+      this.setRespawnStatus(
+        player,
+        `${player.name} needs a 9x9 safe respawn zone. Elimination in ${remainingSeconds}s...`,
+        true,
+      );
       return;
     }
 
+    player.respawnBlockedTicks = 0;
     player.respawnPreviewPosition = spawn;
     player.respawnPreviewTicks = RESPAWN_PREVIEW_TICKS;
     player.state = PLAYER_STATE.RESPAWNING;
-    this.setRespawnStatus(player, `${player.name} found a respawn opening.`, true);
+    player.respawnStatus = `${player.name} respawning soon...`;
   }
 
   computeAiDirection(player) {
@@ -274,6 +407,15 @@ export class Game {
     const profile = AI_PROFILES[player.aiProfile];
     player.aiTurnCooldown = Math.max(0, (profile?.turnInterval ?? 2) - 1);
     return direction;
+  }
+
+  shouldFreezeAiMovement(player, suppressionTier) {
+    if (suppressionTier === 0 || player.isHuman) {
+      return false;
+    }
+
+    const cadence = [1, 4, 3, 2][suppressionTier];
+    return cadence > 1 && (this.ticks + player.id) % cadence === 0;
   }
 
   resolveDirection(player) {
@@ -369,32 +511,33 @@ export class Game {
     player.territoryCount = this.countTerritory(player.id);
     player.stats.captures += totalClaimed;
 
-    const share = (totalClaimed / (GRID_SIZE * GRID_SIZE)) * 100;
+    const share = (totalClaimed / this.getCellCount()) * 100;
     if (totalClaimed > 0) {
-      this.effects.push(this.createPopup(player.position.x + 0.2, player.position.y - 0.2, `+${share.toFixed(2)}%`));
-      this.effects.push(this.createBurst(player.position, player.color));
+      this.pushEffect(this.createPopup(player.position.x + 0.2, player.position.y - 0.2, `+${share.toFixed(2)}%`));
+      this.pushEffect(this.createBurst(player.position, player.color));
       this.addEvent(`${player.name} claimed ${formatPercent(share)}.`);
     }
   }
 
   fillEnclosedArea(player) {
-    const blocked = new Uint8Array(GRID_SIZE * GRID_SIZE);
+    const gridSize = this.config.gridSize;
+    const blocked = new Uint8Array(this.getCellCount());
     for (let index = 0; index < blocked.length; index += 1) {
       if (this.territory[index] === player.id || this.trailMap[index] === player.id) {
         blocked[index] = 1;
       }
     }
 
-    const visited = new Uint8Array(GRID_SIZE * GRID_SIZE);
+    const visited = new Uint8Array(this.getCellCount());
     const queue = [];
 
-    for (let x = 0; x < GRID_SIZE; x += 1) {
+    for (let x = 0; x < gridSize; x += 1) {
       this.enqueueFill(x, 0, blocked, visited, queue);
-      this.enqueueFill(x, GRID_SIZE - 1, blocked, visited, queue);
+      this.enqueueFill(x, gridSize - 1, blocked, visited, queue);
     }
-    for (let y = 0; y < GRID_SIZE; y += 1) {
+    for (let y = 0; y < gridSize; y += 1) {
       this.enqueueFill(0, y, blocked, visited, queue);
-      this.enqueueFill(GRID_SIZE - 1, y, blocked, visited, queue);
+      this.enqueueFill(gridSize - 1, y, blocked, visited, queue);
     }
 
     while (queue.length) {
@@ -405,8 +548,8 @@ export class Game {
     }
 
     let claimed = 0;
-    for (let y = 0; y < GRID_SIZE; y += 1) {
-      for (let x = 0; x < GRID_SIZE; x += 1) {
+    for (let y = 0; y < gridSize; y += 1) {
+      for (let x = 0; x < gridSize; x += 1) {
         const index = this.index(x, y);
         if (!blocked[index] && !visited[index]) {
           this.setTerritory(x, y, player.id);
@@ -440,6 +583,8 @@ export class Game {
     player.respawnPreviewPosition = null;
     player.respawnStatus = "";
     player.respawnStatusDirty = "";
+    player.respawnBlockedTicks = 0;
+    player.eliminationReason = "";
 
     const fadedCells = [];
     for (let index = 0; index < this.territory.length; index += 1) {
@@ -447,8 +592,8 @@ export class Game {
         continue;
       }
       this.territory[index] = 0;
-      const x = index % GRID_SIZE;
-      const y = Math.floor(index / GRID_SIZE);
+      const x = index % this.config.gridSize;
+      const y = Math.floor(index / this.config.gridSize);
       fadedCells.push({ x, y });
     }
 
@@ -459,9 +604,9 @@ export class Game {
     player.trailSet.clear();
     player.territoryCount = 0;
 
-    this.effects.push(this.createBurst(player.position, player.color));
+    this.pushEffect(this.createBurst(player.position, player.color));
     if (fadedCells.length) {
-      this.effects.push({
+      this.pushEffect({
         type: "fade",
         color: player.color,
         cells: fadedCells,
@@ -479,6 +624,15 @@ export class Game {
     }
   }
 
+  eliminatePlayer(player, message) {
+    player.state = PLAYER_STATE.ELIMINATED;
+    player.respawnPreviewTicks = 0;
+    player.respawnPreviewPosition = null;
+    player.respawnBlockedTicks = RESPAWN_ELIMINATION_SECONDS * this.config.tickRate;
+    player.eliminationReason = message;
+    this.setRespawnStatus(player, message, true);
+  }
+
   finishRespawn(player, spawn) {
     player.position = spawn;
     player.direction = this.pickDirection();
@@ -486,6 +640,8 @@ export class Game {
     player.aiTurnCooldown = 0;
     player.respawnPreviewTicks = 0;
     player.respawnPreviewPosition = null;
+    player.respawnBlockedTicks = 0;
+    player.eliminationReason = "";
     player.alive = true;
     player.state = PLAYER_STATE.IN_TERRITORY;
     this.claimInitialTerritory(player);
@@ -496,9 +652,10 @@ export class Game {
   findBestRespawnPoint(playerId) {
     let bestPoint = null;
     let bestScore = Number.NEGATIVE_INFINITY;
+    const gridSize = this.config.gridSize;
 
-    for (let y = INITIAL_TERRITORY_RADIUS + 1; y < GRID_SIZE - INITIAL_TERRITORY_RADIUS - 1; y += 1) {
-      for (let x = INITIAL_TERRITORY_RADIUS + 1; x < GRID_SIZE - INITIAL_TERRITORY_RADIUS - 1; x += 1) {
+    for (let y = RESPAWN_CLEAR_RADIUS; y < gridSize - RESPAWN_CLEAR_RADIUS; y += 1) {
+      for (let x = RESPAWN_CLEAR_RADIUS; x < gridSize - RESPAWN_CLEAR_RADIUS; x += 1) {
         if (!this.isRespawnAreaAvailable(x, y, playerId)) {
           continue;
         }
@@ -517,8 +674,8 @@ export class Game {
   }
 
   isRespawnAreaAvailable(centerX, centerY, playerId) {
-    for (let dy = -INITIAL_TERRITORY_RADIUS; dy <= INITIAL_TERRITORY_RADIUS; dy += 1) {
-      for (let dx = -INITIAL_TERRITORY_RADIUS; dx <= INITIAL_TERRITORY_RADIUS; dx += 1) {
+    for (let dy = -RESPAWN_CLEAR_RADIUS; dy <= RESPAWN_CLEAR_RADIUS; dy += 1) {
+      for (let dx = -RESPAWN_CLEAR_RADIUS; dx <= RESPAWN_CLEAR_RADIUS; dx += 1) {
         const x = centerX + dx;
         const y = centerY + dy;
         if (!this.isInside(x, y)) {
@@ -537,7 +694,11 @@ export class Game {
           if (player.alive && player.position.x === x && player.position.y === y) {
             return false;
           }
-          if (!player.alive && player.respawnPreviewPosition?.x === x && player.respawnPreviewPosition?.y === y) {
+          if (
+            player.respawnPreviewPosition &&
+            Math.abs(player.respawnPreviewPosition.x - centerX) <= INITIAL_TERRITORY_RADIUS * 2 &&
+            Math.abs(player.respawnPreviewPosition.y - centerY) <= INITIAL_TERRITORY_RADIUS * 2
+          ) {
             return false;
           }
         }
@@ -549,7 +710,7 @@ export class Game {
 
   measureRespawnEmptiness(centerX, centerY) {
     let emptyCells = 0;
-    const radius = INITIAL_TERRITORY_RADIUS + 3;
+    const radius = RESPAWN_CLEAR_RADIUS + 3;
 
     for (let dy = -radius; dy <= radius; dy += 1) {
       for (let dx = -radius; dx <= radius; dx += 1) {
@@ -581,13 +742,10 @@ export class Game {
         continue;
       }
 
-      nearestDistance = Math.min(
-        nearestDistance,
-        manhattanDistance({ x: centerX, y: centerY }, reference),
-      );
+      nearestDistance = Math.min(nearestDistance, manhattanDistance({ x: centerX, y: centerY }, reference));
     }
 
-    return nearestDistance === Infinity ? GRID_SIZE : nearestDistance;
+    return nearestDistance === Infinity ? this.config.gridSize : nearestDistance;
   }
 
   setRespawnStatus(player, message, shouldLog = false) {
@@ -595,6 +753,8 @@ export class Game {
     if (shouldLog && message && player.respawnStatusDirty !== message) {
       this.addEvent(message);
       player.respawnStatusDirty = message;
+      this.statusMessage = message;
+      this.statusTicks = Math.max(1, Math.round(this.config.tickRate * 1.2));
     }
     if (!message) {
       player.respawnStatusDirty = "";
@@ -604,7 +764,9 @@ export class Game {
   }
 
   scaleSpawnFractions(fractions) {
-    return fractions.map((fraction) => clamp(Math.round((GRID_SIZE - 1) * fraction), 6, GRID_SIZE - 7));
+    return fractions.map((fraction) =>
+      clamp(Math.round((this.config.gridSize - 1) * fraction), RESPAWN_CLEAR_RADIUS + 2, this.config.gridSize - RESPAWN_CLEAR_RADIUS - 3),
+    );
   }
 
   pickDirection() {
@@ -616,7 +778,86 @@ export class Game {
     const leader = rankings[0] ? this.playerMap.get(rankings[0].id) : null;
     this.banner = leader ? `${leader.name} wins the timed round.` : "Match complete.";
     this.addEvent(this.banner);
-    this.restart(true);
+    this.completeMatch({
+      title: leader ? `${leader.name} Wins` : "Match Complete",
+      subtitle: "Press any key on desktop or tap Restart to run another round.",
+      rankings,
+    });
+  }
+
+  finishEndlessVictory() {
+    const rankings = this.computeRankings();
+    this.banner = "The player became the Terminus Producer.";
+    this.addEvent(this.banner);
+    this.completeMatch({
+      title: "【终产者】",
+      subtitle: "Every rival lost access to a legal 9x9 respawn zone.",
+      rankings,
+    });
+  }
+
+  completeMatch(finalResults) {
+    this.paused = true;
+    this.matchComplete = true;
+    this.finalResults = finalResults;
+    this.input.clear();
+    this.input.setRestartOnAnyKey(true);
+  }
+
+  evaluateEndlessVictory() {
+    if (this.matchComplete || this.config.attractMode || !this.config.humanEnabled) {
+      this.endlessCountdownText = "";
+      return;
+    }
+
+    const opponents = this.players.filter((player) => !player.isHuman);
+    if (!opponents.length) {
+      this.endlessCountdownText = "";
+      return;
+    }
+
+    if (opponents.every((player) => player.state === PLAYER_STATE.ELIMINATED)) {
+      this.endlessLockoutTicks += 1;
+    } else {
+      this.endlessLockoutTicks = 0;
+      this.endlessCountdownText = "";
+    }
+
+    const countdownDelayTicks = this.config.tickRate * 3;
+    const countdownWindowTicks = ENDLESS_LOCKOUT_VICTORY_SECONDS * this.config.tickRate;
+    const countdownTicks = this.endlessLockoutTicks - countdownDelayTicks;
+
+    if (countdownTicks > 0 && countdownTicks < countdownWindowTicks) {
+      const remaining = Math.max(0, ENDLESS_LOCKOUT_VICTORY_SECONDS - Math.floor(countdownTicks / this.config.tickRate));
+      this.endlessCountdownText = `终产者 ${remaining}s`;
+    } else {
+      this.endlessCountdownText = "";
+    }
+
+    if (this.endlessLockoutTicks >= countdownDelayTicks + countdownWindowTicks) {
+      this.finishEndlessVictory();
+    }
+  }
+
+  getSuppressionTier() {
+    if (!this.config.suppressionEnabled || !this.config.humanEnabled) {
+      return 0;
+    }
+    const human = this.players.find((player) => player.isHuman);
+    if (!human || !human.alive) {
+      return 0;
+    }
+    const share = this.computePercentages().get(human.id) ?? 0;
+    if (share >= 90) {
+      return 3;
+    }
+    if (share >= 75) {
+      return 2;
+    }
+    if (share >= 50) {
+      return 1;
+    }
+    return 0;
   }
 
   createPopup(x, y, text) {
@@ -632,7 +873,7 @@ export class Game {
 
   createBurst(origin, color) {
     const particles = [];
-    for (let index = 0; index < 16; index += 1) {
+    for (let index = 0; index < 12; index += 1) {
       particles.push({
         x: origin.x + (this.rng() - 0.5) * 4,
         y: origin.y + (this.rng() - 0.5) * 4,
@@ -646,6 +887,13 @@ export class Game {
       life: 12,
       maxLife: 12,
     };
+  }
+
+  pushEffect(effect) {
+    this.effects.push(effect);
+    if (this.effects.length > MAX_EFFECTS) {
+      this.effects.shift();
+    }
   }
 
   addEvent(message) {
@@ -700,7 +948,7 @@ export class Game {
       if (this.territory[index] !== playerId) {
         continue;
       }
-      const point = { x: index % GRID_SIZE, y: Math.floor(index / GRID_SIZE) };
+      const point = { x: index % this.config.gridSize, y: Math.floor(index / this.config.gridSize) };
       const distance = manhattanDistance(origin, point);
       if (distance < bestDistance) {
         bestDistance = distance;
@@ -712,6 +960,7 @@ export class Game {
 
   getRenderState() {
     return {
+      gridSize: this.config.gridSize,
       territory: this.territory,
       players: this.players,
       effects: this.effects,
@@ -723,6 +972,8 @@ export class Game {
   getHudState() {
     const rankings = this.computeRankings();
     return {
+      showHud: this.config.showHud,
+      attractMode: this.config.attractMode,
       players: this.players,
       playerMap: this.playerMap,
       percentages: this.computePercentages(),
@@ -731,8 +982,13 @@ export class Game {
       mode: this.mode,
       events: this.events,
       banner: this.banner,
+      statusMessage: this.statusMessage,
+      centerCountdownText: this.endlessCountdownText,
       paused: this.paused,
+      matchComplete: this.matchComplete,
+      finalResults: this.finalResults,
       respawnMessage: this.getHumanRespawnMessage(),
+      performance: this.getPerformanceSnapshot(),
     };
   }
 
@@ -741,7 +997,7 @@ export class Game {
     if (!human || human.alive) {
       return "";
     }
-    return human.respawnStatus;
+    return human.respawnStatus || human.eliminationReason;
   }
 
   computePercentages() {
@@ -755,7 +1011,7 @@ export class Game {
       }
       counts.set(owner, (counts.get(owner) ?? 0) + 1);
     }
-    const total = GRID_SIZE * GRID_SIZE;
+    const total = this.getCellCount();
     const percentages = new Map();
     for (const [id, count] of counts.entries()) {
       percentages.set(id, (count / total) * 100);
@@ -780,6 +1036,25 @@ export class Game {
     return count;
   }
 
+  recordPerformance(sample) {
+    this.performance.frames += 1;
+    this.performance.frameMs = rollingAverage(this.performance.frameMs, sample.frameMs, this.performance.frames);
+    this.performance.updateMs = rollingAverage(this.performance.updateMs, sample.updateMs, this.performance.frames);
+    this.performance.renderMs = rollingAverage(this.performance.renderMs, sample.renderMs, this.performance.frames);
+    this.performance.effectCount = this.effects.length;
+    window.paperioLiteDiagnostics = this.getPerformanceSnapshot();
+  }
+
+  getPerformanceSnapshot() {
+    return {
+      frameMs: roundMetric(this.performance.frameMs),
+      updateMs: roundMetric(this.performance.updateMs),
+      renderMs: roundMetric(this.performance.renderMs),
+      effectCount: this.performance.effectCount,
+      tickRate: this.config.tickRate,
+    };
+  }
+
   setTerritory(x, y, playerId) {
     this.territory[this.index(x, y)] = playerId;
   }
@@ -787,8 +1062,8 @@ export class Game {
   project(position, directionName) {
     const projection = this.projectRaw(position, directionName);
     return {
-      x: clamp(projection.x, 0, GRID_SIZE - 1),
-      y: clamp(projection.y, 0, GRID_SIZE - 1),
+      x: clamp(projection.x, 0, this.config.gridSize - 1),
+      y: clamp(projection.y, 0, this.config.gridSize - 1),
     };
   }
 
@@ -801,10 +1076,23 @@ export class Game {
   }
 
   isInside(x, y) {
-    return x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE;
+    return x >= 0 && x < this.config.gridSize && y >= 0 && y < this.config.gridSize;
   }
 
   index(x, y) {
-    return y * GRID_SIZE + x;
+    return y * this.config.gridSize + x;
   }
+
+  getCellCount() {
+    return this.config.gridSize * this.config.gridSize;
+  }
+}
+
+function rollingAverage(previous, next, count) {
+  const boundedCount = Math.min(count, PERFORMANCE_SAMPLE_SIZE);
+  return previous + (next - previous) / boundedCount;
+}
+
+function roundMetric(value) {
+  return Math.round(value * 100) / 100;
 }

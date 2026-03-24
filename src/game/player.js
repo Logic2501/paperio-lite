@@ -19,6 +19,8 @@ export function createPlayer({ id, name, color, isHuman, aiProfile, spawn, direc
     respawnPreviewPosition: null,
     respawnStatus: "",
     respawnStatusDirty: "",
+    respawnBlockedTicks: 0,
+    eliminationReason: "",
     aiTurnCooldown: 0,
     stats: {
       kills: 0,

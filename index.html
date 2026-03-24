@@ -7,33 +7,117 @@
     <link rel="stylesheet" href="./src/styles/main.css" />
   </head>
   <body>
+    <section id="startScreen" class="start-screen" aria-live="polite">
+      <div class="start-screen-card">
+        <p class="panel-label">Demo Lobby</p>
+        <h2>Paper.io Lite</h2>
+        <p class="start-screen-copy">Watch the arena, tune the rules, then jump into the next round.</p>
+        <div class="menu-mode-row" role="group" aria-label="Select mode">
+          <button id="menuModeTimed" class="ghost-button menu-mode-button active" type="button">Timed</button>
+          <button id="menuModeEndless" class="ghost-button menu-mode-button" type="button">Endless</button>
+        </div>
+        <section class="menu-custom-panel" aria-label="Custom options">
+          <div class="menu-custom-head">
+            <p class="panel-label">Custom</p>
+            <span class="menu-custom-note">More rule cards can land here later.</span>
+          </div>
+          <label class="menu-field">
+            <span>AI Count</span>
+            <div class="menu-field-control">
+              <input id="aiCountInput" type="range" min="1" max="5" step="1" value="3" />
+              <strong id="aiCountValue">3</strong>
+            </div>
+          </label>
+          <label class="menu-field">
+            <span>Move Speed</span>
+            <div class="menu-field-control">
+              <select id="tickRateInput">
+                <option value="6">6</option>
+                <option value="12" selected>12</option>
+                <option value="18">18</option>
+              </select>
+            </div>
+          </label>
+          <label class="menu-field">
+            <span>Board Size</span>
+            <div class="menu-field-control">
+              <select id="gridSizeSelect">
+                <option value="24">24 x 24</option>
+                <option value="36" selected>36 x 36</option>
+                <option value="48">48 x 48</option>
+                <option value="60">60 x 60</option>
+                <option value="72">72 x 72</option>
+              </select>
+            </div>
+          </label>
+          <label class="menu-toggle-row" for="suppressionToggle">
+            <span>Enable Suppression</span>
+            <input id="suppressionToggle" type="checkbox" />
+          </label>
+        </section>
+        <button id="menuStartButton" class="primary-button start-screen-button" type="button">Start Match</button>
+      </div>
+    </section>
     <div class="app-shell">
       <header class="topbar">
-        <div>
+        <div class="topbar-brand">
           <p class="eyebrow">Canvas Territory Duel</p>
           <h1>Paper.io Lite</h1>
         </div>
-        <div class="topbar-actions">
-          <button id="restartButton" class="primary-button" type="button">Restart</button>
-          <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
-        </div>
-      </header>
-      <main class="game-layout">
-        <section class="playfield-card">
-          <canvas id="gameCanvas" width="960" height="960" aria-label="Paper io playfield"></canvas>
-          <div id="statusBanner" class="status-banner hidden"></div>
-        </section>
-        <aside class="sidebar">
-          <section class="panel">
+        <div class="topbar-status">
+          <div class="compact-territory">
             <p class="panel-label">Territory</p>
-            <div class="progress-row">
+            <div class="progress-row compact-progress-row">
               <div class="progress-track">
                 <div id="territoryBar" class="progress-fill"></div>
               </div>
               <strong id="territoryValue">0.00%</strong>
             </div>
-            <p id="timerValue" class="timer-value">02:00</p>
+          </div>
+          <p id="timerValue" class="timer-value compact-timer-value">02:00</p>
+          <button id="menuOpenButtonDesktop" class="ghost-button menu-open-button" type="button">Menu</button>
+          <button id="restartButton" class="primary-button" type="button">Restart</button>
+          <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
+        </div>
+      </header>
+      <section id="finalResults" class="final-results hidden" aria-live="polite">
+        <div class="final-results-card">
+          <p class="panel-label">Final Standings</p>
+          <h2 id="finalTitle">Match Complete</h2>
+          <p id="finalSubtitle" class="final-subtitle"></p>
+          <ol id="finalRankings" class="final-rankings"></ol>
+          <button id="overlayRestartButton" class="primary-button overlay-restart-button" type="button">Restart</button>
+        </div>
+      </section>
+      <main class="game-layout">
+        <section id="playfieldCard" class="playfield-card">
+          <canvas id="gameCanvas" width="960" height="960" aria-label="Paper io playfield"></canvas>
+          <div id="statusBanner" class="status-banner hidden"></div>
+          <div id="centerCountdown" class="center-countdown hidden"></div>
+          <section class="mobile-console" aria-label="Touch controls">
+            <div class="mobile-console-head">
+              <button id="menuOpenButtonMobile" class="console-menu-button" type="button">Menu</button>
+              <button id="pauseButton" class="console-pause-button console-icon-button" type="button" aria-label="Pause">
+                <span class="pause-icon" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="mobile-dpad" role="group" aria-label="Direction buttons">
+              <button class="console-direction-button console-direction-up" type="button" data-direction="up" aria-label="Up">
+                <span class="console-triangle console-triangle-up" aria-hidden="true"></span>
+              </button>
+              <button class="console-direction-button console-direction-left" type="button" data-direction="left" aria-label="Left">
+                <span class="console-triangle console-triangle-left" aria-hidden="true"></span>
+              </button>
+              <button class="console-direction-button console-direction-right" type="button" data-direction="right" aria-label="Right">
+                <span class="console-triangle console-triangle-right" aria-hidden="true"></span>
+              </button>
+              <button class="console-direction-button console-direction-down" type="button" data-direction="down" aria-label="Down">
+                <span class="console-triangle console-triangle-down" aria-hidden="true"></span>
+              </button>
+            </div>
           </section>
+        </section>
+        <aside class="sidebar">
           <section class="panel">
             <p class="panel-label">Leaderboard</p>
             <ol id="leaderboard" class="leaderboard"></ol>
@@ -41,7 +125,9 @@
           <section class="panel">
             <p class="panel-label">Controls</p>
             <p>Move with <strong>WASD</strong> or <strong>Arrow Keys</strong>.</p>
-            <p>Swipe support is wired for touch devices.</p>
+            <p>Swipe inside the board on touch devices to turn without dragging the page.</p>
+            <p>Mobile also gets a four-way red arcade pad plus pause.</p>
+            <p>Timed mode pauses on finish and shows final standings. Desktop can restart with any key.</p>
             <p>Keep moving, close loops, and cut enemy trails before they cut yours.</p>
           </section>
           <section class="panel">

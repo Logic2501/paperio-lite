@@ -177,6 +177,48 @@ function nextSequentialVersion(lastVersion) {
   });
 }
 
+function nextBumpedVersion(lastVersion, bump) {
+  if (!lastVersion) {
+    return "1.0.0";
+  }
+
+  const parsed = parseVersion(lastVersion);
+  if (bump === "minor") {
+    return formatVersion({
+      major: parsed.major,
+      minor: parsed.minor + 1,
+      patch: 0,
+    });
+  }
+
+  if (bump === "major") {
+    return formatVersion({
+      major: parsed.major + 1,
+      minor: 0,
+      patch: 0,
+    });
+  }
+
+  return nextSequentialVersion(lastVersion);
+}
+
+function isAllowedNextVersion(lastVersion, explicitVersion) {
+  if (!lastVersion) {
+    return explicitVersion === "1.0.0";
+  }
+
+  const previous = parseVersion(lastVersion);
+  const next = parseVersion(explicitVersion);
+
+  const patchBump =
+    next.major === previous.major && next.minor === previous.minor && next.patch === previous.patch + 1;
+  const minorBump =
+    next.major === previous.major && next.minor === previous.minor + 1 && next.patch === 0;
+  const majorBump = next.major === previous.major + 1 && next.minor === 0 && next.patch === 0;
+
+  return patchBump || minorBump || majorBump;
+}
+
 function resolveVersion() {
   const state = readVersionState();
   const explicitVersion = process.argv[2] || null;
@@ -189,10 +231,17 @@ function resolveVersion() {
     };
   }
 
+  if (explicitVersion === "patch" || explicitVersion === "minor" || explicitVersion === "major") {
+    return {
+      version: nextBumpedVersion(state.lastVersion, explicitVersion),
+      state,
+    };
+  }
+
   parseVersion(explicitVersion);
-  if (explicitVersion !== expectedNext) {
+  if (!isAllowedNextVersion(state.lastVersion, explicitVersion)) {
     throw new Error(
-      `Refusing version "${explicitVersion}". Expected next sequential version "${expectedNext}" after "${state.lastVersion ?? "none"}".`,
+      `Refusing version "${explicitVersion}". Expected a patch, minor, or major semver bump after "${state.lastVersion ?? "none"}". Default next patch is "${expectedNext}".`,
     );
   }
 
