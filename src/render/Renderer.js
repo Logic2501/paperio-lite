@@ -37,6 +37,7 @@ export class Renderer {
     this.drawBackground(ctx, size);
     this.drawTerritory(ctx, state);
     this.drawTrails(ctx, state);
+    this.drawRespawnPreviews(ctx, state);
     this.drawEffects(ctx, state);
     this.drawPlayers(ctx, state);
     this.drawHudDecoration(ctx, state);
@@ -141,6 +142,30 @@ export class Renderer {
     }
   }
 
+  drawRespawnPreviews(ctx, state) {
+    for (const player of state.players) {
+      if (player.alive || !player.respawnPreviewPosition) {
+        continue;
+      }
+
+      const px = player.respawnPreviewPosition.x * this.cellSize;
+      const py = player.respawnPreviewPosition.y * this.cellSize;
+      const blinkOn = Math.floor(player.respawnPreviewTicks / 3) % 2 === 0;
+      const baseColor = darkenColor(player.color, 0.42);
+      const fillAlpha = blinkOn ? 0.34 : 0.16;
+      const strokeAlpha = blinkOn ? 0.68 : 0.28;
+      const outline = Math.max(1.2, this.cellSize * 0.14);
+
+      ctx.save();
+      ctx.fillStyle = withAlpha(baseColor, fillAlpha);
+      ctx.fillRect(px, py, this.cellSize, this.cellSize);
+      ctx.strokeStyle = withAlpha(baseColor, strokeAlpha);
+      ctx.lineWidth = outline;
+      ctx.strokeRect(px - outline / 2, py - outline / 2, this.cellSize + outline, this.cellSize + outline);
+      ctx.restore();
+    }
+  }
+
   drawEffects(ctx, state) {
     for (const effect of state.effects) {
       if (effect.type === "popup") {
@@ -213,4 +238,8 @@ function darkenColor(hex, factor) {
   const blue = Math.max(0, Math.floor(parseInt(expanded.slice(4, 6), 16) * factor));
 
   return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function withAlpha(rgb, alpha) {
+  return rgb.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
 }
