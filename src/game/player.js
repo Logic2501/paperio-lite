@@ -15,7 +15,10 @@ export function createPlayer({ id, name, color, isHuman, aiProfile, spawn, direc
     trail: [],
     trailSet: new Set(),
     territoryCount: 0,
-    respawnTicks: 0,
+    respawnPreviewTicks: 0,
+    respawnPreviewPosition: null,
+    respawnStatus: "",
+    respawnStatusDirty: "",
     aiTurnCooldown: 0,
     stats: {
       kills: 0,

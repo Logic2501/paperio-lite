@@ -22,7 +22,7 @@ export class Hud {
     this.renderLeaderboard(state.rankings, state.playerMap, state.percentages);
     this.renderEvents(state.events);
 
-    const bannerText = state.paused ? "Paused" : state.banner;
+    const bannerText = state.paused ? "Paused" : state.respawnMessage || state.banner;
     if (bannerText) {
       this.elements.statusBanner.textContent = bannerText;
       this.elements.statusBanner.classList.remove("hidden");

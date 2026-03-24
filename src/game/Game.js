@@ -9,7 +9,7 @@ import {
   OPPOSITE_DIRECTION,
   PLAYER_COLORS,
   PLAYER_STATE,
-  RESPAWN_TICKS,
+  RESPAWN_PREVIEW_TICKS,
   TICK_RATE,
 } from "../core/constants.js";
 import { clamp, createRng, formatPercent, manhattanDistance, pointKey } from "../core/utils.js";
@@ -226,13 +226,39 @@ export class Game {
   }
 
   updateRespawn(player) {
-    if (player.respawnTicks <= 0) {
+    const candidate = player.respawnPreviewPosition;
+
+    if (candidate) {
+      if (!this.isRespawnAreaAvailable(candidate.x, candidate.y, player.id)) {
+        player.respawnPreviewTicks = 0;
+        player.respawnPreviewPosition = null;
+        player.state = PLAYER_STATE.DEAD;
+        this.setRespawnStatus(player, "Respawn preview cancelled. Searching for a new opening.", true);
+        return;
+      }
+
+      player.respawnPreviewTicks -= 1;
+      if (player.respawnPreviewTicks > 0) {
+        const remaining = Math.ceil(player.respawnPreviewTicks / this.config.tickRate);
+        this.setRespawnStatus(player, `${player.name} respawning in ${remaining}s...`);
+        return;
+      }
+
+      this.finishRespawn(player, candidate);
       return;
     }
-    player.respawnTicks -= 1;
-    if (player.respawnTicks === 0) {
-      this.respawnPlayer(player);
+
+    const spawn = this.findBestRespawnPoint(player.id);
+    if (!spawn) {
+      player.state = PLAYER_STATE.DEAD;
+      this.setRespawnStatus(player, `${player.name} is waiting for a safe respawn zone.`, true);
+      return;
     }
+
+    player.respawnPreviewPosition = spawn;
+    player.respawnPreviewTicks = RESPAWN_PREVIEW_TICKS;
+    player.state = PLAYER_STATE.RESPAWNING;
+    this.setRespawnStatus(player, `${player.name} found a respawn opening.`, true);
   }
 
   computeAiDirection(player) {
@@ -410,7 +436,10 @@ export class Game {
     player.alive = false;
     player.state = PLAYER_STATE.DEAD;
     player.stats.deaths += 1;
-    player.respawnTicks = RESPAWN_TICKS;
+    player.respawnPreviewTicks = 0;
+    player.respawnPreviewPosition = null;
+    player.respawnStatus = "";
+    player.respawnStatusDirty = "";
 
     const fadedCells = [];
     for (let index = 0; index < this.territory.length; index += 1) {
@@ -450,37 +479,128 @@ export class Game {
     }
   }
 
-  respawnPlayer(player) {
-    const spawn = this.findSpawnPoint();
+  finishRespawn(player, spawn) {
     player.position = spawn;
     player.direction = this.pickDirection();
     player.nextDirection = player.direction;
     player.aiTurnCooldown = 0;
+    player.respawnPreviewTicks = 0;
+    player.respawnPreviewPosition = null;
     player.alive = true;
-    player.state = PLAYER_STATE.RESPAWNING;
+    player.state = PLAYER_STATE.IN_TERRITORY;
     this.claimInitialTerritory(player);
+    this.setRespawnStatus(player, "");
     this.addEvent(`${player.name} respawned.`);
   }
 
-  findSpawnPoint() {
-    for (let attempt = 0; attempt < 200; attempt += 1) {
-      const x = 6 + Math.floor(this.rng() * (GRID_SIZE - 12));
-      const y = 6 + Math.floor(this.rng() * (GRID_SIZE - 12));
-      let safe = true;
-      for (const player of this.players) {
-        if (!player.alive) {
+  findBestRespawnPoint(playerId) {
+    let bestPoint = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (let y = INITIAL_TERRITORY_RADIUS + 1; y < GRID_SIZE - INITIAL_TERRITORY_RADIUS - 1; y += 1) {
+      for (let x = INITIAL_TERRITORY_RADIUS + 1; x < GRID_SIZE - INITIAL_TERRITORY_RADIUS - 1; x += 1) {
+        if (!this.isRespawnAreaAvailable(x, y, playerId)) {
           continue;
         }
-        if (manhattanDistance({ x, y }, player.position) < 10) {
-          safe = false;
-          break;
+
+        const emptiness = this.measureRespawnEmptiness(x, y);
+        const distance = this.measureRespawnDistance(x, y, playerId);
+        const score = emptiness * 10 + distance * 6;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestPoint = { x, y };
         }
       }
-      if (safe) {
-        return { x, y };
+    }
+    return bestPoint;
+  }
+
+  isRespawnAreaAvailable(centerX, centerY, playerId) {
+    for (let dy = -INITIAL_TERRITORY_RADIUS; dy <= INITIAL_TERRITORY_RADIUS; dy += 1) {
+      for (let dx = -INITIAL_TERRITORY_RADIUS; dx <= INITIAL_TERRITORY_RADIUS; dx += 1) {
+        const x = centerX + dx;
+        const y = centerY + dy;
+        if (!this.isInside(x, y)) {
+          return false;
+        }
+
+        const index = this.index(x, y);
+        if (this.territory[index] !== 0 || this.trailMap[index] !== 0) {
+          return false;
+        }
+
+        for (const player of this.players) {
+          if (player.id === playerId) {
+            continue;
+          }
+          if (player.alive && player.position.x === x && player.position.y === y) {
+            return false;
+          }
+          if (!player.alive && player.respawnPreviewPosition?.x === x && player.respawnPreviewPosition?.y === y) {
+            return false;
+          }
+        }
       }
     }
-    return { x: 10, y: 10 };
+
+    return true;
+  }
+
+  measureRespawnEmptiness(centerX, centerY) {
+    let emptyCells = 0;
+    const radius = INITIAL_TERRITORY_RADIUS + 3;
+
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const x = centerX + dx;
+        const y = centerY + dy;
+        if (!this.isInside(x, y)) {
+          continue;
+        }
+        const index = this.index(x, y);
+        if (this.territory[index] === 0 && this.trailMap[index] === 0) {
+          emptyCells += 1;
+        }
+      }
+    }
+
+    return emptyCells;
+  }
+
+  measureRespawnDistance(centerX, centerY, playerId) {
+    let nearestDistance = Infinity;
+
+    for (const player of this.players) {
+      if (player.id === playerId) {
+        continue;
+      }
+
+      const reference = player.alive ? player.position : player.respawnPreviewPosition;
+      if (!reference) {
+        continue;
+      }
+
+      nearestDistance = Math.min(
+        nearestDistance,
+        manhattanDistance({ x: centerX, y: centerY }, reference),
+      );
+    }
+
+    return nearestDistance === Infinity ? GRID_SIZE : nearestDistance;
+  }
+
+  setRespawnStatus(player, message, shouldLog = false) {
+    player.respawnStatus = message;
+    if (shouldLog && message && player.respawnStatusDirty !== message) {
+      this.addEvent(message);
+      player.respawnStatusDirty = message;
+    }
+    if (!message) {
+      player.respawnStatusDirty = "";
+    } else if (shouldLog) {
+      player.respawnStatusDirty = message;
+    }
   }
 
   scaleSpawnFractions(fractions) {
@@ -612,7 +732,16 @@ export class Game {
       events: this.events,
       banner: this.banner,
       paused: this.paused,
+      respawnMessage: this.getHumanRespawnMessage(),
     };
+  }
+
+  getHumanRespawnMessage() {
+    const human = this.players.find((player) => player.isHuman);
+    if (!human || human.alive) {
+      return "";
+    }
+    return human.respawnStatus;
   }
 
   computePercentages() {
