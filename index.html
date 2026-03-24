@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paper.io Lite</title>
+    <link rel="stylesheet" href="./src/styles/main.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Canvas Territory Duel</p>
+          <h1>Paper.io Lite</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="restartButton" class="primary-button" type="button">Restart</button>
+          <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
+        </div>
+      </header>
+      <main class="game-layout">
+        <section class="playfield-card">
+          <canvas id="gameCanvas" width="960" height="960" aria-label="Paper io playfield"></canvas>
+          <div id="statusBanner" class="status-banner hidden"></div>
+        </section>
+        <aside class="sidebar">
+          <section class="panel">
+            <p class="panel-label">Territory</p>
+            <div class="progress-row">
+              <div class="progress-track">
+                <div id="territoryBar" class="progress-fill"></div>
+              </div>
+              <strong id="territoryValue">0.00%</strong>
+            </div>
+            <p id="timerValue" class="timer-value">02:00</p>
+          </section>
+          <section class="panel">
+            <p class="panel-label">Leaderboard</p>
+            <ol id="leaderboard" class="leaderboard"></ol>
+          </section>
+          <section class="panel">
+            <p class="panel-label">Controls</p>
+            <p>Move with <strong>WASD</strong> or <strong>Arrow Keys</strong>.</p>
+            <p>Swipe support is wired for touch devices.</p>
+            <p>Keep moving, close loops, and cut enemy trails before they cut yours.</p>
+          </section>
+          <section class="panel">
+            <p class="panel-label">Events</p>
+            <div id="eventLog" class="event-log"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

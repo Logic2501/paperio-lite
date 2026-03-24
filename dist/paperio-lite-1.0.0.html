@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paper.io Lite 1.0.0</title>
+    <style>
+:root {
+  --bg: #f3efe5;
+  --panel: rgba(255, 252, 245, 0.9);
+  --panel-border: rgba(64, 52, 46, 0.12);
+  --ink: #32261f;
+  --muted: #79695e;
+  --accent: #1f8fdb;
+  --shadow: 0 24px 60px rgba(69, 53, 45, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(255, 208, 172, 0.65), transparent 28%),
+    radial-gradient(circle at top right, rgba(181, 231, 255, 0.65), transparent 26%),
+    linear-gradient(180deg, #f8f4ec 0%, var(--bg) 100%);
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+body {
+  padding: 24px;
+}
+
+.app-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow,
+.panel-label {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 0.95;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button {
+  background: #1f8fdb;
+  color: white;
+  box-shadow: 0 10px 24px rgba(31, 143, 219, 0.32);
+}
+
+.ghost-button {
+  background: rgba(50, 38, 31, 0.08);
+  color: var(--ink);
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.playfield-card,
+.panel {
+  position: relative;
+  border: 1px solid var(--panel-border);
+  border-radius: 26px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.playfield-card {
+  padding: 18px;
+  overflow: hidden;
+}
+
+#gameCanvas {
+  display: block;
+  border-radius: 18px;
+  background: #f9f8f3;
+}
+
+.status-banner {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  top: 28px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(50, 38, 31, 0.85);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.hidden {
+  display: none;
+}
+
+.sidebar {
+  display: grid;
+  gap: 14px;
+}
+
+.panel {
+  padding: 18px 18px 16px;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-track {
+  flex: 1;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(50, 38, 31, 0.08);
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #30d5c8 0%, #1f8fdb 55%, #0d5db8 100%);
+}
+
+.timer-value {
+  margin: 14px 0 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.leaderboard {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.leaderboard li {
+  padding-left: 6px;
+}
+
+.leader-entry {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.98rem;
+}
+
+.leader-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leader-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.event-log {
+  display: grid;
+  gap: 10px;
+  min-height: 80px;
+}
+
+.event-item {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(50, 38, 31, 0.06);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 1120px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 14px;
+  }
+
+  .topbar {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .playfield-card {
+    padding: 12px;
+  }
+}
+
+</style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Canvas Territory Duel</p>
+          <h1>Paper.io Lite</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="restartButton" class="primary-button" type="button">Restart</button>
+          <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
+        </div>
+      </header>
+      <main class="game-layout">
+        <section class="playfield-card">
+          <canvas id="gameCanvas" width="960" height="960" aria-label="Paper io playfield"></canvas>
+          <div id="statusBanner" class="status-banner hidden"></div>
+        </section>
+        <aside class="sidebar">
+          <section class="panel">
+            <p class="panel-label">Territory</p>
+            <div class="progress-row">
+              <div class="progress-track">
+                <div id="territoryBar" class="progress-fill"></div>
+              </div>
+              <strong id="territoryValue">0.00%</strong>
+            </div>
+            <p id="timerValue" class="timer-value">02:00</p>
+          </section>
+          <section class="panel">
+            <p class="panel-label">Leaderboard</p>
+            <ol id="leaderboard" class="leaderboard"></ol>
+          </section>
+          <section class="panel">
+            <p class="panel-label">Controls</p>
+            <p>Move with <strong>WASD</strong> or <strong>Arrow Keys</strong>.</p>
+            <p>Swipe support is wired for touch devices.</p>
+            <p>Keep moving, close loops, and cut enemy trails before they cut yours.</p>
+          </section>
+          <section class="panel">
+            <p class="panel-label">Events</p>
+            <div id="eventLog" class="event-log"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+    <script>
+(function () {
+  const __modules = {
+    "/src/core/constants.js": function(exports, __require) {
+const GRID_SIZE = 64;
+const TICK_RATE = 8;
+const RESPAWN_TICKS = TICK_RATE * 2;
+const DEFAULT_MATCH_SECONDS = 120;
+const MAX_EVENT_LOG = 6;
+const INITIAL_TERRITORY_RADIUS = 2;
+const PLAYER_COLORS = [
+  "#23a6d5",
+  "#ff6b6b",
+  "#4ecb71",
+  "#f7b731",
+  "#9b59b6",
+  "#ff8a5b",
+  "#00c2a8",
+  "#3b82f6",
+];
+
+const DIRECTIONS = {
+  up: { x: 0, y: -1, name: "up" },
+  right: { x: 1, y: 0, name: "right" },
+  down: { x: 0, y: 1, name: "down" },
+  left: { x: -1, y: 0, name: "left" },
+};
+
+const DIRECTION_ORDER = [
+  DIRECTIONS.up,
+  DIRECTIONS.right,
+  DIRECTIONS.down,
+  DIRECTIONS.left,
+];
+
+const OPPOSITE_DIRECTION = {
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
+};
+
+const PLAYER_STATE = {
+  IN_TERRITORY: "inTerritory",
+  TRAILING: "trailing",
+  CLOSING: "closing",
+  DEAD: "dead",
+  RESPAWNING: "respawning",
+};
+
+const GAME_MODE = {
+  TIMED: "timed",
+  ENDLESS: "endless",
+};
+
+const AI_PROFILES = {
+  cautious: {
+    aggression: 0.22,
+    maxTrail: 10,
+    interceptRange: 6,
+    riskTolerance: 0.35,
+    turnInterval: 4,
+  },
+  balanced: {
+    aggression: 0.42,
+    maxTrail: 16,
+    interceptRange: 8,
+    riskTolerance: 0.5,
+    turnInterval: 3,
+  },
+  aggressive: {
+    aggression: 0.68,
+    maxTrail: 22,
+    interceptRange: 11,
+    riskTolerance: 0.72,
+    turnInterval: 2,
+  },
+};
+
+Object.assign(exports, { GRID_SIZE, TICK_RATE, RESPAWN_TICKS, DEFAULT_MATCH_SECONDS, MAX_EVENT_LOG, INITIAL_TERRITORY_RADIUS, PLAYER_COLORS, DIRECTIONS, DIRECTION_ORDER, OPPOSITE_DIRECTION, PLAYER_STATE, GAME_MODE, AI_PROFILES });
+
+},
+    "/src/core/input.js": function(exports, __require) {
+const { DIRECTION_ORDER, OPPOSITE_DIRECTION } = __require("/src/core/constants.js");
+
+const KEY_TO_DIRECTION = {
+  ArrowUp: "up",
+  KeyW: "up",
+  ArrowRight: "right",
+  KeyD: "right",
+  ArrowDown: "down",
+  KeyS: "down",
+  ArrowLeft: "left",
+  KeyA: "left",
+};
+
+class InputController {
+  constructor(target = window) {
+    this.target = target;
+    this.queuedDirection = null;
+    this.pauseRequested = false;
+    this.touchStart = null;
+    this.boundKeyDown = (event) => this.onKeyDown(event);
+    this.boundTouchStart = (event) => this.onTouchStart(event);
+    this.boundTouchEnd = (event) => this.onTouchEnd(event);
+  }
+
+  attach() {
+    this.target.addEventListener("keydown", this.boundKeyDown);
+    this.target.addEventListener("touchstart", this.boundTouchStart, { passive: true });
+    this.target.addEventListener("touchend", this.boundTouchEnd, { passive: true });
+  }
+
+  detach() {
+    this.target.removeEventListener("keydown", this.boundKeyDown);
+    this.target.removeEventListener("touchstart", this.boundTouchStart);
+    this.target.removeEventListener("touchend", this.boundTouchEnd);
+  }
+
+  consumeDirection(currentDirection) {
+    if (!this.queuedDirection) {
+      return null;
+    }
+    const nextDirection = this.queuedDirection;
+    if (currentDirection && OPPOSITE_DIRECTION[currentDirection] === nextDirection) {
+      this.queuedDirection = null;
+      return null;
+    }
+    this.queuedDirection = null;
+    return nextDirection;
+  }
+
+  consumePauseToggle() {
+    if (!this.pauseRequested) {
+      return false;
+    }
+    this.pauseRequested = false;
+    return true;
+  }
+
+  clear() {
+    this.queuedDirection = null;
+    this.touchStart = null;
+  }
+
+  onKeyDown(event) {
+    if (event.code === "Escape" || event.code === "Space") {
+      event.preventDefault();
+      this.pauseRequested = true;
+      return;
+    }
+    const direction = KEY_TO_DIRECTION[event.code];
+    if (!direction) {
+      return;
+    }
+    event.preventDefault();
+    this.queuedDirection = direction;
+  }
+
+  onTouchStart(event) {
+    const touch = event.changedTouches[0];
+    this.touchStart = { x: touch.clientX, y: touch.clientY };
+  }
+
+  onTouchEnd(event) {
+    if (!this.touchStart) {
+      return;
+    }
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - this.touchStart.x;
+    const dy = touch.clientY - this.touchStart.y;
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+      this.touchStart = null;
+      return;
+    }
+    this.queuedDirection = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
+    this.touchStart = null;
+  }
+
+  getDirectionOptions() {
+    return DIRECTION_ORDER.map((direction) => direction.name);
+  }
+}
+
+Object.assign(exports, { InputController });
+
+},
+    "/src/core/utils.js": function(exports, __require) {
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function createRng(seed = Date.now()) {
+  let state = seed % 2147483647;
+  if (state <= 0) {
+    state += 2147483646;
+  }
+  return () => {
+    state = (state * 16807) % 2147483647;
+    return (state - 1) / 2147483646;
+  };
+}
+
+function formatPercent(value) {
+  return `${value.toFixed(2)}%`;
+}
+
+function formatTime(seconds) {
+  const clamped = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(clamped / 60)
+    .toString()
+    .padStart(2, "0");
+  const remain = (clamped % 60).toString().padStart(2, "0");
+  return `${minutes}:${remain}`;
+}
+
+function pointKey(x, y) {
+  return `${x},${y}`;
+}
+
+function manhattanDistance(a, b) {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+function shuffleInPlace(items, rng = Math.random) {
+  for (let index = items.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(rng() * (index + 1));
+    [items[index], items[swapIndex]] = [items[swapIndex], items[index]];
+  }
+  return items;
+}
+
+Object.assign(exports, { clamp, lerp, createRng, formatPercent, formatTime, pointKey, manhattanDistance, shuffleInPlace });
+
+},
+    "/src/render/Renderer.js": function(exports, __require) {
+const { GRID_SIZE } = __require("/src/core/constants.js");
+const { clamp, lerp } = __require("/src/core/utils.js");
+
+class Renderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.context = canvas.getContext("2d");
+    this.dpr = Math.max(1, window.devicePixelRatio || 1);
+    this.resize();
+  }
+
+  resize() {
+    const parent = this.canvas.parentElement;
+    const bounds = this.canvas.getBoundingClientRect();
+    const parentWidth = parent?.clientWidth ?? bounds.width ?? 960;
+    const parentStyle = parent ? window.getComputedStyle(parent) : null;
+    const horizontalPadding = parentStyle
+      ? parseFloat(parentStyle.paddingLeft || "0") + parseFloat(parentStyle.paddingRight || "0")
+      : 0;
+    const contentWidth = Math.max(1, parentWidth - horizontalPadding);
+    const maxViewportHeight = Math.floor(window.innerHeight * 0.66);
+    const size = Math.max(1, Math.floor(Math.min(contentWidth, maxViewportHeight)));
+
+    this.canvas.style.width = `${size}px`;
+    this.canvas.style.height = `${size}px`;
+    this.canvas.width = size * this.dpr;
+    this.canvas.height = size * this.dpr;
+    this.context.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.viewportSize = size;
+    this.cellSize = size / GRID_SIZE;
+  }
+
+  render(state) {
+    const ctx = this.context;
+    const size = this.viewportSize;
+    ctx.clearRect(0, 0, size, size);
+    this.drawBackground(ctx, size);
+    this.drawTerritory(ctx, state);
+    this.drawTrails(ctx, state);
+    this.drawEffects(ctx, state);
+    this.drawPlayers(ctx, state);
+    this.drawHudDecoration(ctx, state);
+  }
+
+  drawBackground(ctx, size) {
+    ctx.fillStyle = "#fbfaf5";
+    ctx.fillRect(0, 0, size, size);
+
+    for (let index = 0; index <= GRID_SIZE; index += 1) {
+      const offset = Math.floor(index * this.cellSize) + 0.5;
+      const isMajor = index % 4 === 0;
+      ctx.strokeStyle = isMajor ? "rgba(79, 58, 48, 0.055)" : "rgba(79, 58, 48, 0.024)";
+      ctx.lineWidth = isMajor ? 0.9 : 0.55;
+      ctx.beginPath();
+      ctx.moveTo(offset, 0);
+      ctx.lineTo(offset, size);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, offset);
+      ctx.lineTo(size, offset);
+      ctx.stroke();
+    }
+  }
+
+  drawTerritory(ctx, state) {
+    for (let y = 0; y < GRID_SIZE; y += 1) {
+      for (let x = 0; x < GRID_SIZE; x += 1) {
+        const ownerId = state.territory[y * GRID_SIZE + x];
+        if (!ownerId) {
+          continue;
+        }
+        const player = state.playerMap.get(ownerId);
+        const px = x * this.cellSize;
+        const py = y * this.cellSize;
+        ctx.fillStyle = `${player.color}76`;
+        ctx.fillRect(px, py, this.cellSize, this.cellSize);
+        ctx.strokeStyle = `${player.color}92`;
+        ctx.lineWidth = Math.max(0.85, this.cellSize * 0.08);
+        ctx.strokeRect(px + 0.35, py + 0.35, this.cellSize - 0.7, this.cellSize - 0.7);
+      }
+    }
+  }
+
+  drawTrails(ctx, state) {
+    for (const player of state.players) {
+      if (!player.trail.length) {
+        continue;
+      }
+
+      const points = [...player.trail, { ...player.position }];
+      const trailWidth = this.cellSize;
+
+      if (!points.length) {
+        continue;
+      }
+
+      ctx.save();
+      ctx.fillStyle = `${player.color}48`;
+
+      for (const point of points) {
+        const cx = (point.x + 0.5) * this.cellSize;
+        const cy = (point.y + 0.5) * this.cellSize;
+        ctx.fillRect(cx - trailWidth / 2, cy - trailWidth / 2, trailWidth, trailWidth);
+      }
+
+      for (let index = 1; index < points.length; index += 1) {
+        const previous = points[index - 1];
+        const current = points[index];
+        const startX = (previous.x + 0.5) * this.cellSize;
+        const startY = (previous.y + 0.5) * this.cellSize;
+        const endX = (current.x + 0.5) * this.cellSize;
+        const endY = (current.y + 0.5) * this.cellSize;
+
+        if (startX === endX) {
+          const top = Math.min(startY, endY) - trailWidth / 2;
+          const height = Math.abs(endY - startY) + trailWidth;
+          ctx.fillRect(startX - trailWidth / 2, top, trailWidth, height);
+        } else {
+          const left = Math.min(startX, endX) - trailWidth / 2;
+          const width = Math.abs(endX - startX) + trailWidth;
+          ctx.fillRect(left, startY - trailWidth / 2, width, trailWidth);
+        }
+      }
+      ctx.restore();
+    }
+  }
+
+  drawPlayers(ctx, state) {
+    for (const player of state.players) {
+      if (!player.alive) {
+        continue;
+      }
+      const px = player.position.x * this.cellSize;
+      const py = player.position.y * this.cellSize;
+      const outline = Math.max(1.4, this.cellSize * 0.16);
+      ctx.fillStyle = player.color;
+      ctx.fillRect(px, py, this.cellSize, this.cellSize);
+      ctx.strokeStyle = darkenColor(player.color, player.isHuman ? 0.64 : 0.58);
+      ctx.lineWidth = outline;
+      ctx.strokeRect(px - outline / 2, py - outline / 2, this.cellSize + outline, this.cellSize + outline);
+    }
+  }
+
+  drawEffects(ctx, state) {
+    for (const effect of state.effects) {
+      if (effect.type === "popup") {
+        const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+        ctx.fillStyle = `rgba(50, 38, 31, ${alpha})`;
+        ctx.font = `700 ${Math.max(12, this.cellSize * 1.6)}px Trebuchet MS`;
+        ctx.fillText(effect.text, effect.x * this.cellSize, effect.y * this.cellSize);
+      }
+
+      if (effect.type === "burst") {
+        const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+        for (const particle of effect.particles) {
+          const progress = 1 - alpha;
+          const x = lerp(effect.origin.x, particle.x, progress) * this.cellSize;
+          const y = lerp(effect.origin.y, particle.y, progress) * this.cellSize;
+          ctx.fillStyle = `${effect.color}${Math.round(alpha * 255)
+            .toString(16)
+            .padStart(2, "0")}`;
+          ctx.fillRect(x, y, Math.max(2, this.cellSize * 0.22), Math.max(2, this.cellSize * 0.22));
+        }
+      }
+
+      if (effect.type === "fade") {
+        const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+        ctx.fillStyle = `${effect.color}${Math.round(alpha * 128)
+          .toString(16)
+          .padStart(2, "0")}`;
+        for (const cell of effect.cells) {
+          ctx.fillRect(cell.x * this.cellSize, cell.y * this.cellSize, this.cellSize, this.cellSize);
+        }
+      }
+    }
+  }
+
+  drawHudDecoration(ctx, state) {
+    const leader = state.rankings[0];
+    if (!leader) {
+      return;
+    }
+    const player = state.playerMap.get(leader.id);
+    if (!player || !player.alive) {
+      return;
+    }
+    const x = player.position.x * this.cellSize + this.cellSize * 0.18;
+    const y = player.position.y * this.cellSize - this.cellSize * 0.45;
+    ctx.fillStyle = "#ffcd58";
+    ctx.beginPath();
+    ctx.moveTo(x, y + this.cellSize * 0.42);
+    ctx.lineTo(x + this.cellSize * 0.12, y);
+    ctx.lineTo(x + this.cellSize * 0.3, y + this.cellSize * 0.18);
+    ctx.lineTo(x + this.cellSize * 0.5, y);
+    ctx.lineTo(x + this.cellSize * 0.64, y + this.cellSize * 0.42);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function darkenColor(hex, factor) {
+  const normalized = hex.replace("#", "");
+  const expanded =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : normalized;
+
+  const red = Math.max(0, Math.floor(parseInt(expanded.slice(0, 2), 16) * factor));
+  const green = Math.max(0, Math.floor(parseInt(expanded.slice(2, 4), 16) * factor));
+  const blue = Math.max(0, Math.floor(parseInt(expanded.slice(4, 6), 16) * factor));
+
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+Object.assign(exports, { Renderer });
+
+},
+    "/src/ui/Hud.js": function(exports, __require) {
+const { MAX_EVENT_LOG } = __require("/src/core/constants.js");
+const { formatPercent, formatTime } = __require("/src/core/utils.js");
+
+class Hud {
+  constructor(elements) {
+    this.elements = elements;
+  }
+
+  bind(game) {
+    this.elements.restartButton.addEventListener("click", () => game.restart());
+    this.elements.modeButton.addEventListener("click", () => game.toggleMode());
+  }
+
+  update(state) {
+    const player = state.players.find((entry) => entry.isHuman);
+    const share = player ? state.percentages.get(player.id) || 0 : 0;
+    this.elements.territoryBar.style.width = `${share}%`;
+    this.elements.territoryValue.textContent = formatPercent(share);
+    this.elements.timerValue.textContent =
+      state.mode === "timed" ? formatTime(state.remainingSeconds) : "ENDLESS";
+    this.elements.modeButton.textContent = `Mode: ${state.mode === "timed" ? "Timed" : "Endless"}`;
+    this.renderLeaderboard(state.rankings, state.playerMap, state.percentages);
+    this.renderEvents(state.events);
+
+    const bannerText = state.paused ? "Paused" : state.banner;
+    if (bannerText) {
+      this.elements.statusBanner.textContent = bannerText;
+      this.elements.statusBanner.classList.remove("hidden");
+    } else {
+      this.elements.statusBanner.classList.add("hidden");
+    }
+  }
+
+  renderLeaderboard(rankings, playerMap, percentages) {
+    this.elements.leaderboard.innerHTML = rankings
+      .map((entry, index) => {
+        const player = playerMap.get(entry.id);
+        const crown = index === 0 ? " Crown" : "";
+        return `
+          <li>
+            <div class="leader-entry">
+              <span class="leader-name">
+                <span class="leader-swatch" style="background:${player.color}"></span>
+                ${player.name}${crown}
+              </span>
+              <strong>${formatPercent(percentages.get(player.id) || 0)}</strong>
+            </div>
+          </li>
+        `;
+      })
+      .join("");
+  }
+
+  renderEvents(events) {
+    const recent = events.slice(0, MAX_EVENT_LOG);
+    this.elements.eventLog.innerHTML = recent.map((event) => `<div class="event-item">${event}</div>`).join("");
+  }
+}
+
+Object.assign(exports, { Hud });
+
+},
+    "/src/game/player.js": function(exports, __require) {
+const { PLAYER_STATE } = __require("/src/core/constants.js");
+
+function createPlayer({ id, name, color, isHuman, aiProfile, spawn, direction }) {
+  return {
+    id,
+    name,
+    color,
+    isHuman,
+    aiProfile,
+    position: { ...spawn },
+    direction,
+    nextDirection: direction,
+    alive: true,
+    state: PLAYER_STATE.IN_TERRITORY,
+    trail: [],
+    trailSet: new Set(),
+    territoryCount: 0,
+    respawnTicks: 0,
+    aiTurnCooldown: 0,
+    stats: {
+      kills: 0,
+      deaths: 0,
+      captures: 0,
+    },
+  };
+}
+
+Object.assign(exports, { createPlayer });
+
+},
+    "/src/ai/AIAgent.js": function(exports, __require) {
+const { DIRECTION_ORDER, OPPOSITE_DIRECTION, PLAYER_STATE } = __require("/src/core/constants.js");
+const { manhattanDistance, shuffleInPlace } = __require("/src/core/utils.js");
+
+class AIAgent {
+  constructor(playerId, profile, rng) {
+    this.playerId = playerId;
+    this.profile = profile;
+    this.rng = rng;
+  }
+
+  update(snapshot) {
+    const self = snapshot.players.find((player) => player.id === this.playerId);
+    if (!self || !self.alive) {
+      return null;
+    }
+
+    const directions = shuffleInPlace(
+      DIRECTION_ORDER.map((direction) => direction.name).filter(
+        (direction) => OPPOSITE_DIRECTION[self.direction] !== direction,
+      ),
+      this.rng,
+    );
+
+    const enemyTrailTarget = this.findClosestEnemyTrail(self, snapshot);
+    const shouldReturn = self.state === PLAYER_STATE.TRAILING && self.trailLength >= this.profile.maxTrail;
+
+    let bestDirection = self.direction;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (const direction of directions) {
+      const next = project(self.position, direction);
+      const evaluation = snapshot.evaluateMove(self.id, direction);
+      if (!evaluation.valid) {
+        continue;
+      }
+
+      let score = evaluation.safe ? 3 : -12;
+      if (evaluation.claimsHome) {
+        score += 18;
+      }
+      if (evaluation.entersEmpty) {
+        score += this.profile.aggression * 8;
+      }
+      if (shouldReturn && evaluation.movesTowardHome) {
+        score += 12;
+      }
+      if (!shouldReturn && evaluation.expandsFrontier) {
+        score += 6;
+      }
+      if (enemyTrailTarget) {
+        const afterDistance = manhattanDistance(next, enemyTrailTarget);
+        score += Math.max(0, this.profile.interceptRange - afterDistance) * this.profile.aggression;
+      }
+      if (!evaluation.safe) {
+        score -= (1 - this.profile.riskTolerance) * 20;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestDirection = direction;
+      }
+    }
+
+    return bestDirection;
+  }
+
+  findClosestEnemyTrail(self, snapshot) {
+    let closest = null;
+    let distance = Infinity;
+    for (const player of snapshot.players) {
+      if (player.id === self.id || !player.alive) {
+        continue;
+      }
+      for (const cell of player.trail) {
+        const nextDistance = manhattanDistance(self.position, cell);
+        if (nextDistance < distance) {
+          distance = nextDistance;
+          closest = cell;
+        }
+      }
+    }
+    return distance <= this.profile.interceptRange ? closest : null;
+  }
+}
+
+function project(position, direction) {
+  if (direction === "up") {
+    return { x: position.x, y: position.y - 1 };
+  }
+  if (direction === "down") {
+    return { x: position.x, y: position.y + 1 };
+  }
+  if (direction === "left") {
+    return { x: position.x - 1, y: position.y };
+  }
+  return { x: position.x + 1, y: position.y };
+}
+
+Object.assign(exports, { AIAgent });
+
+},
+    "/src/game/Game.js": function(exports, __require) {
+const {
+  AI_PROFILES,
+  DEFAULT_MATCH_SECONDS,
+  DIRECTIONS,
+  DIRECTION_ORDER,
+  GAME_MODE,
+  GRID_SIZE,
+  INITIAL_TERRITORY_RADIUS,
+  OPPOSITE_DIRECTION,
+  PLAYER_COLORS,
+  PLAYER_STATE,
+  RESPAWN_TICKS,
+  TICK_RATE,
+} = __require("/src/core/constants.js");
+const { clamp, createRng, formatPercent, manhattanDistance, pointKey } = __require("/src/core/utils.js");
+const { createPlayer } = __require("/src/game/player.js");
+const { AIAgent } = __require("/src/ai/AIAgent.js");
+
+class Game {
+  constructor(config) {
+    this.renderer = config.renderer;
+    this.input = config.input;
+    this.hud = config.hud;
+    this.config = {
+      gridSize: GRID_SIZE,
+      aiCount: config.aiCount ?? 5,
+      tickRate: TICK_RATE,
+      mode: config.mode ?? GAME_MODE.TIMED,
+      matchSeconds: config.matchSeconds ?? DEFAULT_MATCH_SECONDS,
+      seed: config.seed ?? Date.now(),
+    };
+    this.rng = createRng(this.config.seed);
+    this.frameId = null;
+    this.paused = false;
+    this.input.attach();
+    this.hud.bind(this);
+    this.boundResize = () => this.renderer.resize();
+    window.addEventListener("resize", this.boundResize);
+    this.restart();
+  }
+
+  restart(preserveBanner = false) {
+    if (this.frameId) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = null;
+    }
+    this.mode = this.config.mode;
+    this.paused = false;
+    this.ticks = 0;
+    this.accumulator = 0;
+    this.lastTimestamp = 0;
+    this.running = false;
+    this.bannerTicks = preserveBanner ? this.config.tickRate * 4 : 0;
+    this.banner = preserveBanner ? this.banner : "";
+    this.events = preserveBanner ? [this.banner, ...this.events].slice(0, 24) : [];
+    this.effects = [];
+    this.territory = new Uint16Array(GRID_SIZE * GRID_SIZE);
+    this.trailMap = new Uint16Array(GRID_SIZE * GRID_SIZE);
+    this.players = [];
+    this.playerMap = new Map();
+    this.agents = new Map();
+    this.spawnPlayers();
+    this.addEvent("Fresh match started.");
+    this.start();
+  }
+
+  toggleMode() {
+    this.config.mode = this.config.mode === GAME_MODE.TIMED ? GAME_MODE.ENDLESS : GAME_MODE.TIMED;
+    this.restart();
+  }
+
+  spawnPlayers() {
+    const profiles = ["balanced", "cautious", "aggressive", "balanced", "aggressive"];
+    const spawnColumns = this.scaleSpawnFractions([0.16, 0.82, 0.82, 0.18, 0.5, 0.5]);
+    const spawnRows = this.scaleSpawnFractions([0.16, 0.18, 0.82, 0.82, 0.28, 0.72]);
+    const directions = ["right", "left", "left", "right", "down", "up"];
+
+    const human = createPlayer({
+      id: 1,
+      name: "You",
+      color: PLAYER_COLORS[0],
+      isHuman: true,
+      spawn: { x: spawnColumns[0], y: spawnRows[0] },
+      direction: directions[0],
+    });
+    this.players.push(human);
+    this.playerMap.set(human.id, human);
+
+    for (let index = 0; index < this.config.aiCount; index += 1) {
+      const player = createPlayer({
+        id: index + 2,
+        name: `AI-${index + 1}`,
+        color: PLAYER_COLORS[index + 1],
+        isHuman: false,
+        aiProfile: profiles[index % profiles.length],
+        spawn: { x: spawnColumns[index + 1], y: spawnRows[index + 1] },
+        direction: directions[index + 1],
+      });
+      this.players.push(player);
+      this.playerMap.set(player.id, player);
+      this.agents.set(player.id, new AIAgent(player.id, AI_PROFILES[player.aiProfile], this.rng));
+    }
+
+    for (const player of this.players) {
+      this.claimInitialTerritory(player);
+    }
+  }
+
+  claimInitialTerritory(player) {
+    for (let dy = -INITIAL_TERRITORY_RADIUS; dy <= INITIAL_TERRITORY_RADIUS; dy += 1) {
+      for (let dx = -INITIAL_TERRITORY_RADIUS; dx <= INITIAL_TERRITORY_RADIUS; dx += 1) {
+        const x = clamp(player.position.x + dx, 0, GRID_SIZE - 1);
+        const y = clamp(player.position.y + dy, 0, GRID_SIZE - 1);
+        this.setTerritory(x, y, player.id);
+      }
+    }
+    player.state = PLAYER_STATE.IN_TERRITORY;
+    player.territoryCount = this.countTerritory(player.id);
+  }
+
+  start() {
+    this.running = true;
+    this.lastTimestamp = performance.now();
+    this.loop(this.lastTimestamp);
+  }
+
+  destroy() {
+    this.running = false;
+    if (this.frameId) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = null;
+    }
+    this.input.detach();
+    window.removeEventListener("resize", this.boundResize);
+  }
+
+  loop = (timestamp) => {
+    if (!this.running) {
+      return;
+    }
+
+    if (this.input.consumePauseToggle()) {
+      this.togglePause();
+    }
+
+    const delta = Math.min(0.1, (timestamp - this.lastTimestamp) / 1000);
+    this.lastTimestamp = timestamp;
+    if (!this.paused) {
+      this.accumulator += delta;
+    } else {
+      this.accumulator = 0;
+    }
+    const tickLength = 1 / this.config.tickRate;
+
+    while (!this.paused && this.accumulator >= tickLength) {
+      this.updateTick();
+      this.accumulator -= tickLength;
+    }
+
+    this.renderer.render(this.getRenderState());
+    this.hud.update(this.getHudState());
+    this.frameId = requestAnimationFrame(this.loop);
+  };
+
+  togglePause() {
+    this.paused = !this.paused;
+    this.input.clear();
+    this.addEvent(this.paused ? "Paused." : "Resumed.");
+  }
+
+  updateTick() {
+    this.ticks += 1;
+    if (this.bannerTicks > 0) {
+      this.bannerTicks -= 1;
+      if (this.bannerTicks === 0) {
+        this.banner = "";
+      }
+    }
+
+    for (const effect of this.effects) {
+      effect.life -= 1;
+    }
+    this.effects = this.effects.filter((effect) => effect.life > 0);
+
+    const intents = [];
+    for (const player of this.players) {
+      if (!player.alive) {
+        this.updateRespawn(player);
+        continue;
+      }
+
+      const direction = player.isHuman
+        ? this.input.consumeDirection(player.direction)
+        : this.computeAiDirection(player);
+      if (direction && OPPOSITE_DIRECTION[player.direction] !== direction) {
+        player.nextDirection = direction;
+      }
+
+      const resolvedDirection = this.resolveDirection(player);
+      intents.push({
+        player,
+        direction: resolvedDirection,
+        next: this.project(player.position, resolvedDirection),
+      });
+    }
+
+    for (const intent of intents) {
+      intent.player.direction = intent.direction;
+      intent.player.position = intent.next;
+    }
+
+    this.resolveCollisions(intents);
+
+    for (const player of this.players) {
+      if (player.alive) {
+        this.resolveTerritoryState(player);
+      }
+    }
+
+    if (this.mode === GAME_MODE.TIMED) {
+      const remaining = this.config.matchSeconds - this.ticks / this.config.tickRate;
+      if (remaining <= 0) {
+        this.finishTimedMatch();
+      }
+    }
+  }
+
+  updateRespawn(player) {
+    if (player.respawnTicks <= 0) {
+      return;
+    }
+    player.respawnTicks -= 1;
+    if (player.respawnTicks === 0) {
+      this.respawnPlayer(player);
+    }
+  }
+
+  computeAiDirection(player) {
+    const currentEvaluation = this.evaluateMove(player.id, player.direction);
+    const mustTurn = !currentEvaluation.valid || !currentEvaluation.safe;
+
+    if (player.aiTurnCooldown > 0 && !mustTurn) {
+      player.aiTurnCooldown -= 1;
+      return null;
+    }
+
+    const direction = this.agents.get(player.id)?.update(this.createAiSnapshot()) ?? null;
+    const profile = AI_PROFILES[player.aiProfile];
+    player.aiTurnCooldown = Math.max(0, (profile?.turnInterval ?? 2) - 1);
+    return direction;
+  }
+
+  resolveDirection(player) {
+    const preferred = player.nextDirection ?? player.direction;
+    const next = this.projectRaw(player.position, preferred);
+    if (this.isInside(next.x, next.y)) {
+      return preferred;
+    }
+
+    for (const candidate of DIRECTION_ORDER.map((direction) => direction.name)) {
+      if (candidate === OPPOSITE_DIRECTION[player.direction]) {
+        continue;
+      }
+      const projection = this.projectRaw(player.position, candidate);
+      if (this.isInside(projection.x, projection.y)) {
+        return candidate;
+      }
+    }
+    return OPPOSITE_DIRECTION[player.direction];
+  }
+
+  resolveCollisions(intents) {
+    const occupied = new Map();
+
+    for (const { player } of intents) {
+      if (!player.alive) {
+        continue;
+      }
+      const index = this.index(player.position.x, player.position.y);
+      const trailOwner = this.trailMap[index];
+      if (trailOwner) {
+        if (trailOwner === player.id) {
+          this.killPlayer(player, player.id, `${player.name} crossed their own trail.`);
+          continue;
+        }
+        const owner = this.playerMap.get(trailOwner);
+        this.killPlayer(owner, player.id, `${player.name} cut ${owner.name}'s trail.`);
+      }
+
+      const key = pointKey(player.position.x, player.position.y);
+      if (!occupied.has(key)) {
+        occupied.set(key, []);
+      }
+      occupied.get(key).push(player.id);
+    }
+
+    for (const ids of occupied.values()) {
+      if (ids.length < 2) {
+        continue;
+      }
+      for (const id of ids) {
+        const player = this.playerMap.get(id);
+        this.killPlayer(player, null, `${player.name} collided head-on.`);
+      }
+    }
+  }
+
+  resolveTerritoryState(player) {
+    const index = this.index(player.position.x, player.position.y);
+    const owner = this.territory[index];
+    const onOwnTerritory = owner === player.id;
+
+    if (!onOwnTerritory) {
+      if (!player.trailSet.has(index)) {
+        player.trail.push({ x: player.position.x, y: player.position.y });
+        player.trailSet.add(index);
+        this.trailMap[index] = player.id;
+      }
+      player.state = PLAYER_STATE.TRAILING;
+      return;
+    }
+
+    if (player.trail.length) {
+      player.state = PLAYER_STATE.CLOSING;
+      this.closeTrail(player);
+      player.state = PLAYER_STATE.IN_TERRITORY;
+      return;
+    }
+
+    player.state = PLAYER_STATE.IN_TERRITORY;
+  }
+
+  closeTrail(player) {
+    for (const cell of player.trail) {
+      this.setTerritory(cell.x, cell.y, player.id);
+      this.trailMap[this.index(cell.x, cell.y)] = 0;
+    }
+
+    const claimedCells = this.fillEnclosedArea(player);
+    const totalClaimed = claimedCells + player.trail.length;
+    player.trail = [];
+    player.trailSet.clear();
+    player.territoryCount = this.countTerritory(player.id);
+    player.stats.captures += totalClaimed;
+
+    const share = (totalClaimed / (GRID_SIZE * GRID_SIZE)) * 100;
+    if (totalClaimed > 0) {
+      this.effects.push(this.createPopup(player.position.x + 0.2, player.position.y - 0.2, `+${share.toFixed(2)}%`));
+      this.effects.push(this.createBurst(player.position, player.color));
+      this.addEvent(`${player.name} claimed ${formatPercent(share)}.`);
+    }
+  }
+
+  fillEnclosedArea(player) {
+    const blocked = new Uint8Array(GRID_SIZE * GRID_SIZE);
+    for (let index = 0; index < blocked.length; index += 1) {
+      if (this.territory[index] === player.id || this.trailMap[index] === player.id) {
+        blocked[index] = 1;
+      }
+    }
+
+    const visited = new Uint8Array(GRID_SIZE * GRID_SIZE);
+    const queue = [];
+
+    for (let x = 0; x < GRID_SIZE; x += 1) {
+      this.enqueueFill(x, 0, blocked, visited, queue);
+      this.enqueueFill(x, GRID_SIZE - 1, blocked, visited, queue);
+    }
+    for (let y = 0; y < GRID_SIZE; y += 1) {
+      this.enqueueFill(0, y, blocked, visited, queue);
+      this.enqueueFill(GRID_SIZE - 1, y, blocked, visited, queue);
+    }
+
+    while (queue.length) {
+      const current = queue.shift();
+      for (const direction of DIRECTION_ORDER) {
+        this.enqueueFill(current.x + direction.x, current.y + direction.y, blocked, visited, queue);
+      }
+    }
+
+    let claimed = 0;
+    for (let y = 0; y < GRID_SIZE; y += 1) {
+      for (let x = 0; x < GRID_SIZE; x += 1) {
+        const index = this.index(x, y);
+        if (!blocked[index] && !visited[index]) {
+          this.setTerritory(x, y, player.id);
+          claimed += 1;
+        }
+      }
+    }
+    return claimed;
+  }
+
+  enqueueFill(x, y, blocked, visited, queue) {
+    if (!this.isInside(x, y)) {
+      return;
+    }
+    const index = this.index(x, y);
+    if (blocked[index] || visited[index]) {
+      return;
+    }
+    visited[index] = 1;
+    queue.push({ x, y });
+  }
+
+  killPlayer(player, killerId, message) {
+    if (!player || !player.alive) {
+      return;
+    }
+    player.alive = false;
+    player.state = PLAYER_STATE.DEAD;
+    player.stats.deaths += 1;
+    player.respawnTicks = RESPAWN_TICKS;
+
+    const fadedCells = [];
+    for (let index = 0; index < this.territory.length; index += 1) {
+      if (this.territory[index] !== player.id) {
+        continue;
+      }
+      this.territory[index] = 0;
+      const x = index % GRID_SIZE;
+      const y = Math.floor(index / GRID_SIZE);
+      fadedCells.push({ x, y });
+    }
+
+    for (const cell of player.trail) {
+      this.trailMap[this.index(cell.x, cell.y)] = 0;
+    }
+    player.trail = [];
+    player.trailSet.clear();
+    player.territoryCount = 0;
+
+    this.effects.push(this.createBurst(player.position, player.color));
+    if (fadedCells.length) {
+      this.effects.push({
+        type: "fade",
+        color: player.color,
+        cells: fadedCells,
+        life: 14,
+        maxLife: 14,
+      });
+    }
+    this.addEvent(message);
+
+    if (killerId && killerId !== player.id) {
+      const killer = this.playerMap.get(killerId);
+      if (killer) {
+        killer.stats.kills += 1;
+      }
+    }
+  }
+
+  respawnPlayer(player) {
+    const spawn = this.findSpawnPoint();
+    player.position = spawn;
+    player.direction = this.pickDirection();
+    player.nextDirection = player.direction;
+    player.aiTurnCooldown = 0;
+    player.alive = true;
+    player.state = PLAYER_STATE.RESPAWNING;
+    this.claimInitialTerritory(player);
+    this.addEvent(`${player.name} respawned.`);
+  }
+
+  findSpawnPoint() {
+    for (let attempt = 0; attempt < 200; attempt += 1) {
+      const x = 6 + Math.floor(this.rng() * (GRID_SIZE - 12));
+      const y = 6 + Math.floor(this.rng() * (GRID_SIZE - 12));
+      let safe = true;
+      for (const player of this.players) {
+        if (!player.alive) {
+          continue;
+        }
+        if (manhattanDistance({ x, y }, player.position) < 10) {
+          safe = false;
+          break;
+        }
+      }
+      if (safe) {
+        return { x, y };
+      }
+    }
+    return { x: 10, y: 10 };
+  }
+
+  scaleSpawnFractions(fractions) {
+    return fractions.map((fraction) => clamp(Math.round((GRID_SIZE - 1) * fraction), 6, GRID_SIZE - 7));
+  }
+
+  pickDirection() {
+    return DIRECTION_ORDER[Math.floor(this.rng() * DIRECTION_ORDER.length)].name;
+  }
+
+  finishTimedMatch() {
+    const rankings = this.computeRankings();
+    const leader = rankings[0] ? this.playerMap.get(rankings[0].id) : null;
+    this.banner = leader ? `${leader.name} wins the timed round.` : "Match complete.";
+    this.addEvent(this.banner);
+    this.restart(true);
+  }
+
+  createPopup(x, y, text) {
+    return {
+      type: "popup",
+      x,
+      y,
+      text,
+      life: 14,
+      maxLife: 14,
+    };
+  }
+
+  createBurst(origin, color) {
+    const particles = [];
+    for (let index = 0; index < 16; index += 1) {
+      particles.push({
+        x: origin.x + (this.rng() - 0.5) * 4,
+        y: origin.y + (this.rng() - 0.5) * 4,
+      });
+    }
+    return {
+      type: "burst",
+      origin: { ...origin },
+      color,
+      particles,
+      life: 12,
+      maxLife: 12,
+    };
+  }
+
+  addEvent(message) {
+    this.events.unshift(message);
+    this.events = this.events.slice(0, 24);
+  }
+
+  createAiSnapshot() {
+    return {
+      players: this.players.map((player) => ({
+        id: player.id,
+        alive: player.alive,
+        position: { ...player.position },
+        direction: player.direction,
+        state: player.state,
+        trail: player.trail.map((cell) => ({ ...cell })),
+        trailLength: player.trail.length,
+      })),
+      evaluateMove: (playerId, direction) => this.evaluateMove(playerId, direction),
+    };
+  }
+
+  evaluateMove(playerId, direction) {
+    const player = this.playerMap.get(playerId);
+    const next = this.projectRaw(player.position, direction);
+    if (!this.isInside(next.x, next.y)) {
+      return { valid: false, safe: false };
+    }
+
+    const index = this.index(next.x, next.y);
+    const territoryOwner = this.territory[index];
+    const trailOwner = this.trailMap[index];
+    const safe = !trailOwner || trailOwner !== player.id;
+    const homeCell = this.findClosestTerritoryCell(player.id, player.position);
+    const nextDistance = homeCell ? manhattanDistance(next, homeCell) : 0;
+    const currentDistance = homeCell ? manhattanDistance(player.position, homeCell) : 0;
+
+    return {
+      valid: true,
+      safe,
+      entersEmpty: territoryOwner === 0,
+      claimsHome: territoryOwner === player.id && player.trail.length > 0,
+      movesTowardHome: nextDistance < currentDistance,
+      expandsFrontier: territoryOwner !== player.id,
+    };
+  }
+
+  findClosestTerritoryCell(playerId, origin) {
+    let best = null;
+    let bestDistance = Infinity;
+    for (let index = 0; index < this.territory.length; index += 1) {
+      if (this.territory[index] !== playerId) {
+        continue;
+      }
+      const point = { x: index % GRID_SIZE, y: Math.floor(index / GRID_SIZE) };
+      const distance = manhattanDistance(origin, point);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = point;
+      }
+    }
+    return best;
+  }
+
+  getRenderState() {
+    return {
+      territory: this.territory,
+      players: this.players,
+      effects: this.effects,
+      playerMap: this.playerMap,
+      rankings: this.computeRankings(),
+    };
+  }
+
+  getHudState() {
+    const rankings = this.computeRankings();
+    return {
+      players: this.players,
+      playerMap: this.playerMap,
+      percentages: this.computePercentages(),
+      rankings,
+      remainingSeconds: Math.max(0, this.config.matchSeconds - this.ticks / this.config.tickRate),
+      mode: this.mode,
+      events: this.events,
+      banner: this.banner,
+      paused: this.paused,
+    };
+  }
+
+  computePercentages() {
+    const counts = new Map();
+    for (const player of this.players) {
+      counts.set(player.id, 0);
+    }
+    for (const owner of this.territory) {
+      if (!owner) {
+        continue;
+      }
+      counts.set(owner, (counts.get(owner) ?? 0) + 1);
+    }
+    const total = GRID_SIZE * GRID_SIZE;
+    const percentages = new Map();
+    for (const [id, count] of counts.entries()) {
+      percentages.set(id, (count / total) * 100);
+    }
+    return percentages;
+  }
+
+  computeRankings() {
+    const percentages = this.computePercentages();
+    return [...this.players]
+      .sort((left, right) => (percentages.get(right.id) ?? 0) - (percentages.get(left.id) ?? 0))
+      .map((player) => ({ id: player.id }));
+  }
+
+  countTerritory(playerId) {
+    let count = 0;
+    for (const owner of this.territory) {
+      if (owner === playerId) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  setTerritory(x, y, playerId) {
+    this.territory[this.index(x, y)] = playerId;
+  }
+
+  project(position, directionName) {
+    const projection = this.projectRaw(position, directionName);
+    return {
+      x: clamp(projection.x, 0, GRID_SIZE - 1),
+      y: clamp(projection.y, 0, GRID_SIZE - 1),
+    };
+  }
+
+  projectRaw(position, directionName) {
+    const direction = DIRECTIONS[directionName];
+    return {
+      x: position.x + direction.x,
+      y: position.y + direction.y,
+    };
+  }
+
+  isInside(x, y) {
+    return x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE;
+  }
+
+  index(x, y) {
+    return y * GRID_SIZE + x;
+  }
+}
+
+Object.assign(exports, { Game });
+
+},
+    "/src/main.js": function(exports, __require) {
+const { GAME_MODE } = __require("/src/core/constants.js");
+const { InputController } = __require("/src/core/input.js");
+const { Renderer } = __require("/src/render/Renderer.js");
+const { Hud } = __require("/src/ui/Hud.js");
+const { Game } = __require("/src/game/Game.js");
+
+const canvas = document.getElementById("gameCanvas");
+const hud = new Hud({
+  territoryBar: document.getElementById("territoryBar"),
+  territoryValue: document.getElementById("territoryValue"),
+  timerValue: document.getElementById("timerValue"),
+  leaderboard: document.getElementById("leaderboard"),
+  eventLog: document.getElementById("eventLog"),
+  statusBanner: document.getElementById("statusBanner"),
+  restartButton: document.getElementById("restartButton"),
+  modeButton: document.getElementById("modeButton"),
+});
+
+const game = new Game({
+  renderer: new Renderer(canvas),
+  input: new InputController(window),
+  hud,
+  aiCount: 5,
+  mode: GAME_MODE.TIMED,
+});
+
+window.paperioLite = game;
+
+}
+  };
+  const __cache = {};
+  function __require(id) {
+    if (__cache[id]) {
+      return __cache[id];
+    }
+    const factory = __modules[id];
+    if (!factory) {
+      throw new Error("Module not found: " + id);
+    }
+    const exports = {};
+    __cache[id] = exports;
+    factory(exports, __require);
+    return exports;
+  }
+  __require("/src/main.js");
+})();
+</script>
+  </body>
+</html>

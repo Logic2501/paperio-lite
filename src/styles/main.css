@@ -1,0 +1,241 @@
+:root {
+  --bg: #f3efe5;
+  --panel: rgba(255, 252, 245, 0.9);
+  --panel-border: rgba(64, 52, 46, 0.12);
+  --ink: #32261f;
+  --muted: #79695e;
+  --accent: #1f8fdb;
+  --shadow: 0 24px 60px rgba(69, 53, 45, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(255, 208, 172, 0.65), transparent 28%),
+    radial-gradient(circle at top right, rgba(181, 231, 255, 0.65), transparent 26%),
+    linear-gradient(180deg, #f8f4ec 0%, var(--bg) 100%);
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+body {
+  padding: 24px;
+}
+
+.app-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow,
+.panel-label {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 0.95;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button {
+  background: #1f8fdb;
+  color: white;
+  box-shadow: 0 10px 24px rgba(31, 143, 219, 0.32);
+}
+
+.ghost-button {
+  background: rgba(50, 38, 31, 0.08);
+  color: var(--ink);
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.playfield-card,
+.panel {
+  position: relative;
+  border: 1px solid var(--panel-border);
+  border-radius: 26px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.playfield-card {
+  padding: 18px;
+  overflow: hidden;
+}
+
+#gameCanvas {
+  display: block;
+  border-radius: 18px;
+  background: #f9f8f3;
+}
+
+.status-banner {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  top: 28px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(50, 38, 31, 0.85);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.hidden {
+  display: none;
+}
+
+.sidebar {
+  display: grid;
+  gap: 14px;
+}
+
+.panel {
+  padding: 18px 18px 16px;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-track {
+  flex: 1;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(50, 38, 31, 0.08);
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #30d5c8 0%, #1f8fdb 55%, #0d5db8 100%);
+}
+
+.timer-value {
+  margin: 14px 0 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.leaderboard {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.leaderboard li {
+  padding-left: 6px;
+}
+
+.leader-entry {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.98rem;
+}
+
+.leader-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leader-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.event-log {
+  display: grid;
+  gap: 10px;
+  min-height: 80px;
+}
+
+.event-item {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(50, 38, 31, 0.06);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 1120px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 14px;
+  }
+
+  .topbar {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .playfield-card {
+    padding: 12px;
+  }
+}
