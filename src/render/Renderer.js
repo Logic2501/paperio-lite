@@ -107,7 +107,13 @@ export class Renderer {
         continue;
       }
 
-      const points = [...player.trail, { ...player.position }];
+      const headPosition = this.getPlayerRenderPosition(player, state.frameAlpha);
+      const settledTrail = player.trail.map((cell) => ({ ...cell }));
+      const lastTrailCell = settledTrail[settledTrail.length - 1];
+      if (lastTrailCell && lastTrailCell.x === player.position.x && lastTrailCell.y === player.position.y) {
+        settledTrail.pop();
+      }
+      const points = [...settledTrail, headPosition];
       const trailWidth = this.cellSize;
 
       if (!points.length) {
@@ -150,8 +156,9 @@ export class Renderer {
       if (!player.alive) {
         continue;
       }
-      const px = player.position.x * this.cellSize;
-      const py = player.position.y * this.cellSize;
+      const renderPosition = this.getPlayerRenderPosition(player, state.frameAlpha);
+      const px = renderPosition.x * this.cellSize;
+      const py = renderPosition.y * this.cellSize;
       const outline = Math.max(1.4, this.cellSize * 0.16);
       ctx.fillStyle = player.color;
       ctx.fillRect(px, py, this.cellSize, this.cellSize);
@@ -168,9 +175,10 @@ export class Renderer {
       }
 
       const blinkOn = Math.floor(player.respawnPreviewTicks / 3) % 2 === 0;
-      const baseColor = darkenColor(player.color, 0.42);
-      const fillAlpha = blinkOn ? 0.34 : 0.16;
-      const strokeAlpha = blinkOn ? 0.68 : 0.28;
+      const baseColor = toRgb(player.color);
+      const outlineColor = darkenColor(player.color, 0.66);
+      const fillAlpha = blinkOn ? 0.46 : 0.24;
+      const strokeAlpha = blinkOn ? 0.84 : 0.44;
       const outline = Math.max(1.2, this.cellSize * 0.14);
       const territorySize = INITIAL_TERRITORY_RADIUS * 2 + 1;
       const previewLeft = (player.respawnPreviewPosition.x - INITIAL_TERRITORY_RADIUS) * this.cellSize;
@@ -180,9 +188,12 @@ export class Renderer {
       const clearLeft = (player.respawnPreviewPosition.x - RESPAWN_CLEAR_RADIUS) * this.cellSize;
       const clearTop = (player.respawnPreviewPosition.y - RESPAWN_CLEAR_RADIUS) * this.cellSize;
       const clearPixels = clearSize * this.cellSize;
+      const centerLeft = player.respawnPreviewPosition.x * this.cellSize;
+      const centerTop = player.respawnPreviewPosition.y * this.cellSize;
+      const centerOutline = Math.max(1.3, this.cellSize * 0.15);
 
       ctx.save();
-      ctx.strokeStyle = withAlpha(baseColor, blinkOn ? 0.45 : 0.18);
+      ctx.strokeStyle = withAlpha(baseColor, blinkOn ? 0.52 : 0.24);
       ctx.lineWidth = Math.max(1, this.cellSize * 0.08);
       ctx.strokeRect(clearLeft, clearTop, clearPixels, clearPixels);
       ctx.fillStyle = withAlpha(baseColor, fillAlpha);
@@ -194,6 +205,16 @@ export class Renderer {
         previewTop - outline / 2,
         previewPixels + outline,
         previewPixels + outline,
+      );
+      ctx.fillStyle = withAlpha(baseColor, blinkOn ? 0.92 : 0.64);
+      ctx.fillRect(centerLeft, centerTop, this.cellSize, this.cellSize);
+      ctx.strokeStyle = withAlpha(outlineColor, blinkOn ? 0.96 : 0.72);
+      ctx.lineWidth = centerOutline;
+      ctx.strokeRect(
+        centerLeft - centerOutline / 2,
+        centerTop - centerOutline / 2,
+        this.cellSize + centerOutline,
+        this.cellSize + centerOutline,
       );
       ctx.restore();
     }
@@ -242,8 +263,9 @@ export class Renderer {
     if (!player || !player.alive) {
       return;
     }
-    const x = player.position.x * this.cellSize + this.cellSize * 0.18;
-    const y = player.position.y * this.cellSize - this.cellSize * 0.45;
+    const renderPosition = this.getPlayerRenderPosition(player, state.frameAlpha);
+    const x = renderPosition.x * this.cellSize + this.cellSize * 0.18;
+    const y = renderPosition.y * this.cellSize - this.cellSize * 0.45;
     ctx.fillStyle = "#ffcd58";
     ctx.beginPath();
     ctx.moveTo(x, y + this.cellSize * 0.42);
@@ -253,6 +275,14 @@ export class Renderer {
     ctx.lineTo(x + this.cellSize * 0.64, y + this.cellSize * 0.42);
     ctx.closePath();
     ctx.fill();
+  }
+
+  getPlayerRenderPosition(player, frameAlpha = 1) {
+    const previous = player.previousPosition ?? player.position;
+    return {
+      x: lerp(previous.x, player.position.x, frameAlpha),
+      y: lerp(previous.y, player.position.y, frameAlpha),
+    };
   }
 }
 
@@ -271,6 +301,10 @@ function darkenColor(hex, factor) {
   const blue = Math.max(0, Math.floor(parseInt(expanded.slice(4, 6), 16) * factor));
 
   return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function toRgb(hex) {
+  return darkenColor(hex, 1);
 }
 
 function withAlpha(rgb, alpha) {

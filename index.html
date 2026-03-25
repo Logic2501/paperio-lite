@@ -22,31 +22,33 @@
             <span class="menu-custom-note">More rule cards can land here later.</span>
           </div>
           <label class="menu-field">
-            <span>AI Count</span>
+            <div class="menu-field-head">
+              <span>AI Count</span>
+              <span id="aiCountContinueLock" class="continue-lock-indicator" aria-hidden="true"></span>
+            </div>
             <div class="menu-field-control">
-              <input id="aiCountInput" type="range" min="1" max="5" step="1" value="3" />
+              <input id="aiCountInput" type="range" min="2" max="5" step="1" value="3" />
               <strong id="aiCountValue">3</strong>
             </div>
           </label>
           <label class="menu-field">
             <span>Move Speed</span>
             <div class="menu-field-control">
-              <select id="tickRateInput">
-                <option value="6">6</option>
-                <option value="12" selected>12</option>
-                <option value="18">18</option>
-              </select>
+              <input id="tickRateInput" type="range" min="6" max="24" step="3" value="15" />
+              <strong id="tickRateValue">15</strong>
             </div>
           </label>
           <label class="menu-field">
-            <span>Board Size</span>
+            <div class="menu-field-head">
+              <span>Board Size</span>
+              <span id="gridSizeContinueLock" class="continue-lock-indicator" aria-hidden="true"></span>
+            </div>
             <div class="menu-field-control">
               <select id="gridSizeSelect">
                 <option value="24">24 x 24</option>
                 <option value="36" selected>36 x 36</option>
                 <option value="48">48 x 48</option>
                 <option value="60">60 x 60</option>
-                <option value="72">72 x 72</option>
               </select>
             </div>
           </label>
@@ -55,7 +57,21 @@
             <input id="suppressionToggle" type="checkbox" />
           </label>
         </section>
-        <button id="menuStartButton" class="primary-button start-screen-button" type="button">Start Match</button>
+        <div class="menu-action-row">
+          <button id="menuContinueButton" class="primary-button menu-action-button menu-continue-button" type="button" aria-label="Start Match">
+            <span class="play-icon" aria-hidden="true"></span>
+            <span class="sr-only">Start Match</span>
+          </button>
+          <button id="menuRestartButton" class="ghost-button menu-action-button menu-restart-button icon-button" type="button" aria-label="Restart">
+            <span class="restart-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
+                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+              </svg>
+            </span>
+            <span class="sr-only">Restart</span>
+          </button>
+        </div>
       </div>
     </section>
     <div class="app-shell">
@@ -76,7 +92,15 @@
           </div>
           <p id="timerValue" class="timer-value compact-timer-value">02:00</p>
           <button id="menuOpenButtonDesktop" class="ghost-button menu-open-button" type="button">Menu</button>
-          <button id="restartButton" class="primary-button" type="button">Restart</button>
+          <button id="restartButton" class="primary-button icon-button" type="button" aria-label="Restart">
+            <span class="restart-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
+                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+              </svg>
+            </span>
+            <span class="sr-only">Restart</span>
+          </button>
           <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
         </div>
       </header>
@@ -86,7 +110,15 @@
           <h2 id="finalTitle">Match Complete</h2>
           <p id="finalSubtitle" class="final-subtitle"></p>
           <ol id="finalRankings" class="final-rankings"></ol>
-          <button id="overlayRestartButton" class="primary-button overlay-restart-button" type="button">Restart</button>
+          <button id="overlayRestartButton" class="primary-button overlay-restart-button icon-button" type="button" aria-label="Restart">
+            <span class="restart-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
+                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+              </svg>
+            </span>
+            <span class="sr-only">Restart</span>
+          </button>
         </div>
       </section>
       <main class="game-layout">
