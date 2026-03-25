@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Paper.io Lite 1.1.8</title>
+    <title>Paper.io Lite 1.1.6</title>
     <style>
 :root {
   --bg: #f3efe5;
@@ -374,9 +374,6 @@ button:disabled {
 .playfield-card {
   padding: 18px;
   overflow: hidden;
-  width: fit-content;
-  max-width: 100%;
-  justify-self: center;
 }
 
 #gameCanvas {
@@ -787,11 +784,6 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .playfield-card {
-    width: auto;
-    justify-self: stretch;
-  }
-
   .sidebar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -999,7 +991,7 @@ button:disabled {
               <span id="aiCountContinueLock" class="continue-lock-indicator" aria-hidden="true"></span>
             </div>
             <div class="menu-field-control">
-              <input id="aiCountInput" type="range" min="2" max="5" step="1" value="3" />
+              <input id="aiCountInput" type="range" min="1" max="5" step="1" value="3" />
               <strong id="aiCountValue">3</strong>
             </div>
           </label>
@@ -1021,6 +1013,7 @@ button:disabled {
                 <option value="36" selected>36 x 36</option>
                 <option value="48">48 x 48</option>
                 <option value="60">60 x 60</option>
+                <option value="72">72 x 72</option>
               </select>
             </div>
           </label>
@@ -1037,8 +1030,8 @@ button:disabled {
           <button id="menuRestartButton" class="ghost-button menu-action-button menu-restart-button icon-button" type="button" aria-label="Restart">
             <span class="restart-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+                <path d="M18 6.2C16.5 4.2 14.4 3 12 3C7 3 3 7 3 12s4 9 9 9c4.1 0 7.7-2.8 8.7-6.8"></path>
+                <path d="M18 6.2V11h-4.8"></path>
               </svg>
             </span>
             <span class="sr-only">Restart</span>
@@ -1067,8 +1060,8 @@ button:disabled {
           <button id="restartButton" class="primary-button icon-button" type="button" aria-label="Restart">
             <span class="restart-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+                <path d="M18 6.2C16.5 4.2 14.4 3 12 3C7 3 3 7 3 12s4 9 9 9c4.1 0 7.7-2.8 8.7-6.8"></path>
+                <path d="M18 6.2V11h-4.8"></path>
               </svg>
             </span>
             <span class="sr-only">Restart</span>
@@ -1085,8 +1078,8 @@ button:disabled {
           <button id="overlayRestartButton" class="primary-button overlay-restart-button icon-button" type="button" aria-label="Restart">
             <span class="restart-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+                <path d="M18 6.2C16.5 4.2 14.4 3 12 3C7 3 3 7 3 12s4 9 9 9c4.1 0 7.7-2.8 8.7-6.8"></path>
+                <path d="M18 6.2V11h-4.8"></path>
               </svg>
             </span>
             <span class="sr-only">Restart</span>
@@ -2150,8 +2143,8 @@ class Game {
       ...config,
       seed: config.seed ?? Date.now(),
     };
-    this.config.aiCount = clamp(this.config.aiCount, 2, 5);
-    this.config.gridSize = clamp(this.config.gridSize, 24, 60);
+    this.config.aiCount = clamp(this.config.aiCount, 1, 5);
+    this.config.gridSize = clamp(this.config.gridSize, 24, 72);
     this.config.tickRate = normalizeTickRate(this.config.tickRate);
     this.config.matchSeconds = clamp(this.config.matchSeconds, 30, 600);
 

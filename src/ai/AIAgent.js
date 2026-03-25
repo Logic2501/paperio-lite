@@ -24,10 +24,40 @@ export class AIAgent {
     const enemyTrailTarget = this.findClosestEnemyTrail(self, snapshot);
     const shouldReturn = self.state === PLAYER_STATE.TRAILING && self.trailLength >= this.profile.maxTrail;
 
-    let bestDirection = self.direction;
+    const restrictedChoice = this.chooseDirection({
+      self,
+      snapshot,
+      directions,
+      enemyTrailTarget,
+      shouldReturn,
+      respectRestrictions: true,
+    });
+
+    if (restrictedChoice !== null) {
+      return restrictedChoice;
+    }
+
+    return (
+      this.chooseDirection({
+        self,
+        snapshot,
+        directions,
+        enemyTrailTarget,
+        shouldReturn,
+        respectRestrictions: false,
+      }) ?? self.direction
+    );
+  }
+
+  chooseDirection({ self, snapshot, directions, enemyTrailTarget, shouldReturn, respectRestrictions }) {
+    let bestDirection = null;
     let bestScore = Number.NEGATIVE_INFINITY;
 
     for (const direction of directions) {
+      if (respectRestrictions && snapshot.isTurnRestricted?.(self.id, direction)) {
+        continue;
+      }
+
       const next = project(self.position, direction);
       const evaluation = snapshot.evaluateMove(self.id, direction);
       if (!evaluation.valid) {

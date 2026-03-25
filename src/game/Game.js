@@ -29,9 +29,9 @@ export class Game {
       ...config,
       seed: config.seed ?? Date.now(),
     };
-    this.config.aiCount = clamp(this.config.aiCount, 1, 5);
-    this.config.gridSize = clamp(this.config.gridSize, 24, 72);
-    this.config.tickRate = clamp(this.config.tickRate, 6, 18);
+    this.config.aiCount = clamp(this.config.aiCount, 2, 5);
+    this.config.gridSize = clamp(this.config.gridSize, 24, 60);
+    this.config.tickRate = normalizeTickRate(this.config.tickRate);
     this.config.matchSeconds = clamp(this.config.matchSeconds, 30, 600);
 
     this.rng = createRng(this.config.seed);
@@ -67,6 +67,7 @@ export class Game {
     this.finalResults = null;
     this.endlessLockoutTicks = 0;
     this.endlessCountdownText = "";
+    this.timedSweepTicks = 0;
     this.input.setRestartOnAnyKey(false);
     this.ticks = 0;
     this.accumulator = 0;
@@ -97,6 +98,7 @@ export class Game {
       this.mode = GAME_MODE.ENDLESS;
       this.endlessLockoutTicks = 0;
       this.endlessCountdownText = "";
+      this.timedSweepTicks = 0;
       this.paused = wasPaused;
       this.banner = "Endless mode engaged.";
       this.bannerTicks = Math.max(1, Math.round(this.config.tickRate * 1.2));
@@ -109,6 +111,7 @@ export class Game {
     this.ticks = 0;
     this.endlessLockoutTicks = 0;
     this.endlessCountdownText = "";
+    this.timedSweepTicks = 0;
     this.matchComplete = false;
     this.finalResults = null;
     this.paused = wasPaused;
@@ -119,7 +122,7 @@ export class Game {
   }
 
   setTickRate(nextTickRate) {
-    const resolved = clamp(Number(nextTickRate), 6, 18);
+    const resolved = normalizeTickRate(nextTickRate);
     if (resolved === this.config.tickRate) {
       return;
     }
@@ -245,7 +248,8 @@ export class Game {
     const updateEnd = performance.now();
 
     const renderStart = performance.now();
-    this.renderer.render(this.getRenderState());
+    const frameAlpha = this.paused || this.matchComplete ? 1 : clamp(this.accumulator / tickLength, 0, 1);
+    this.renderer.render(this.getRenderState(frameAlpha));
     this.hud.update(this.getHudState());
     const renderEnd = performance.now();
 
@@ -287,6 +291,10 @@ export class Game {
     }
     this.effects = this.effects.filter((effect) => effect.life > 0);
 
+    for (const player of this.players) {
+      player.previousPosition = { ...player.position };
+    }
+
     const intents = [];
     const suppressionTier = this.getSuppressionTier();
     for (const player of this.players) {
@@ -313,6 +321,8 @@ export class Game {
       const resolvedDirection = this.resolveDirection(player);
       intents.push({
         player,
+        turned: resolvedDirection !== player.direction,
+        turnSide: getTurnSide(player.direction, resolvedDirection),
         direction: resolvedDirection,
         next: this.project(player.position, resolvedDirection),
       });
@@ -325,6 +335,13 @@ export class Game {
 
     this.resolveCollisions(intents);
 
+    for (const intent of intents) {
+      if (!intent.player.alive || intent.player.isHuman) {
+        continue;
+      }
+      this.updateAiTurnState(intent.player, intent);
+    }
+
     for (const player of this.players) {
       if (player.alive) {
         this.resolveTerritoryState(player);
@@ -332,6 +349,10 @@ export class Game {
     }
 
     if (this.mode === GAME_MODE.TIMED) {
+      if (this.evaluateTimedSweepVictory()) {
+        return;
+      }
+
       const remaining = this.config.matchSeconds - this.ticks / this.config.tickRate;
       if (remaining <= 0) {
         this.finishTimedMatch();
@@ -407,6 +428,44 @@ export class Game {
     const profile = AI_PROFILES[player.aiProfile];
     player.aiTurnCooldown = Math.max(0, (profile?.turnInterval ?? 2) - 1);
     return direction;
+  }
+
+  updateAiTurnState(player, intent) {
+    if (!intent.turned) {
+      player.aiStepsSinceTurn += 1;
+      return;
+    }
+
+    if (!intent.turnSide) {
+      player.aiLastTurnSide = null;
+      player.aiQuickTurnStreak = 0;
+      player.aiStepsSinceTurn = 0;
+      return;
+    }
+
+    const isQuickSameTurn = player.aiLastTurnSide === intent.turnSide && player.aiStepsSinceTurn <= 4;
+    player.aiLastTurnSide = intent.turnSide;
+    player.aiQuickTurnStreak = isQuickSameTurn ? player.aiQuickTurnStreak + 1 : 1;
+    player.aiStepsSinceTurn = 0;
+  }
+
+  isAiTurnRestricted(player, direction) {
+    if (!player || player.isHuman || !player.alive) {
+      return false;
+    }
+
+    const turnSide = getTurnSide(player.direction, direction);
+    if (!turnSide) {
+      return false;
+    }
+
+    return player.aiLastTurnSide === turnSide && player.aiQuickTurnStreak >= 3 && player.aiStepsSinceTurn <= 4;
+  }
+
+  resetAiTurnState(player) {
+    player.aiLastTurnSide = null;
+    player.aiQuickTurnStreak = 0;
+    player.aiStepsSinceTurn = 99;
   }
 
   shouldFreezeAiMovement(player, suppressionTier) {
@@ -585,6 +644,8 @@ export class Game {
     player.respawnStatusDirty = "";
     player.respawnBlockedTicks = 0;
     player.eliminationReason = "";
+    player.previousPosition = { ...player.position };
+    this.resetAiTurnState(player);
 
     const fadedCells = [];
     for (let index = 0; index < this.territory.length; index += 1) {
@@ -630,11 +691,14 @@ export class Game {
     player.respawnPreviewPosition = null;
     player.respawnBlockedTicks = RESPAWN_ELIMINATION_SECONDS * this.config.tickRate;
     player.eliminationReason = message;
+    player.previousPosition = { ...player.position };
+    this.resetAiTurnState(player);
     this.setRespawnStatus(player, message, true);
   }
 
   finishRespawn(player, spawn) {
     player.position = spawn;
+    player.previousPosition = { ...spawn };
     player.direction = this.pickDirection();
     player.nextDirection = player.direction;
     player.aiTurnCooldown = 0;
@@ -644,6 +708,7 @@ export class Game {
     player.eliminationReason = "";
     player.alive = true;
     player.state = PLAYER_STATE.IN_TERRITORY;
+    this.resetAiTurnState(player);
     this.claimInitialTerritory(player);
     this.setRespawnStatus(player, "");
     this.addEvent(`${player.name} respawned.`);
@@ -785,13 +850,37 @@ export class Game {
     });
   }
 
+  finishTimedSweepVictory() {
+    const rankings = this.computeRankings();
+    this.banner = "All rivals were fully eliminated.";
+    this.addEvent(this.banner);
+    this.completeMatch({
+      title: "【闪电战】",
+      subtitle: "Every rival was fully eliminated before the timer expired.",
+      rankings,
+    });
+  }
+
   finishEndlessVictory() {
     const rankings = this.computeRankings();
+    this.endlessCountdownText = "";
     this.banner = "The player became the Terminus Producer.";
     this.addEvent(this.banner);
     this.completeMatch({
       title: "【终产者】",
       subtitle: "Every rival lost access to a legal 9x9 respawn zone.",
+      rankings,
+    });
+  }
+
+  finishEndlessFailure() {
+    const rankings = this.computeRankings();
+    this.endlessCountdownText = "";
+    this.banner = "The final push collapsed at the finish line.";
+    this.addEvent(this.banner);
+    this.completeMatch({
+      title: "【功亏一篑】",
+      subtitle: "The last rival fell, but the player did not survive the final countdown.",
       rankings,
     });
   }
@@ -810,6 +899,7 @@ export class Game {
       return;
     }
 
+    const human = this.getHumanPlayer();
     const opponents = this.players.filter((player) => !player.isHuman);
     if (!opponents.length) {
       this.endlessCountdownText = "";
@@ -817,6 +907,10 @@ export class Game {
     }
 
     if (opponents.every((player) => player.state === PLAYER_STATE.ELIMINATED)) {
+      if (!human || !human.alive) {
+        this.finishEndlessFailure();
+        return;
+      }
       this.endlessLockoutTicks += 1;
     } else {
       this.endlessLockoutTicks = 0;
@@ -829,7 +923,7 @@ export class Game {
 
     if (countdownTicks > 0 && countdownTicks < countdownWindowTicks) {
       const remaining = Math.max(0, ENDLESS_LOCKOUT_VICTORY_SECONDS - Math.floor(countdownTicks / this.config.tickRate));
-      this.endlessCountdownText = `终产者 ${remaining}s`;
+      this.endlessCountdownText = `${remaining}`;
     } else {
       this.endlessCountdownText = "";
     }
@@ -839,11 +933,38 @@ export class Game {
     }
   }
 
+  evaluateTimedSweepVictory() {
+    if (this.matchComplete || this.config.attractMode || !this.config.humanEnabled) {
+      this.timedSweepTicks = 0;
+      return false;
+    }
+
+    const human = this.getHumanPlayer();
+    const opponents = this.players.filter((player) => !player.isHuman);
+    if (!human || !human.alive || !opponents.length) {
+      this.timedSweepTicks = 0;
+      return false;
+    }
+
+    if (!opponents.every((player) => player.state === PLAYER_STATE.ELIMINATED)) {
+      this.timedSweepTicks = 0;
+      return false;
+    }
+
+    this.timedSweepTicks += 1;
+    if (this.timedSweepTicks < this.config.tickRate) {
+      return false;
+    }
+
+    this.finishTimedSweepVictory();
+    return true;
+  }
+
   getSuppressionTier() {
     if (!this.config.suppressionEnabled || !this.config.humanEnabled) {
       return 0;
     }
-    const human = this.players.find((player) => player.isHuman);
+    const human = this.getHumanPlayer();
     if (!human || !human.alive) {
       return 0;
     }
@@ -913,6 +1034,7 @@ export class Game {
         trailLength: player.trail.length,
       })),
       evaluateMove: (playerId, direction) => this.evaluateMove(playerId, direction),
+      isTurnRestricted: (playerId, direction) => this.isAiTurnRestricted(this.playerMap.get(playerId), direction),
     };
   }
 
@@ -958,8 +1080,9 @@ export class Game {
     return best;
   }
 
-  getRenderState() {
+  getRenderState(frameAlpha = 1) {
     return {
+      frameAlpha,
       gridSize: this.config.gridSize,
       territory: this.territory,
       players: this.players,
@@ -993,11 +1116,15 @@ export class Game {
   }
 
   getHumanRespawnMessage() {
-    const human = this.players.find((player) => player.isHuman);
+    const human = this.getHumanPlayer();
     if (!human || human.alive) {
       return "";
     }
     return human.respawnStatus || human.eliminationReason;
+  }
+
+  getHumanPlayer() {
+    return this.players.find((player) => player.isHuman) ?? null;
   }
 
   computePercentages() {
@@ -1091,6 +1218,33 @@ export class Game {
 function rollingAverage(previous, next, count) {
   const boundedCount = Math.min(count, PERFORMANCE_SAMPLE_SIZE);
   return previous + (next - previous) / boundedCount;
+}
+
+function normalizeTickRate(value) {
+  const clamped = clamp(Number(value), 6, 24);
+  const stepped = 6 + Math.round((clamped - 6) / 3) * 3;
+  return clamp(stepped, 6, 24);
+}
+
+function getTurnSide(fromDirection, toDirection) {
+  if (!fromDirection || !toDirection || fromDirection === toDirection) {
+    return null;
+  }
+
+  const fromIndex = DIRECTION_ORDER.findIndex((direction) => direction.name === fromDirection);
+  const toIndex = DIRECTION_ORDER.findIndex((direction) => direction.name === toDirection);
+  if (fromIndex < 0 || toIndex < 0) {
+    return null;
+  }
+
+  const delta = (toIndex - fromIndex + DIRECTION_ORDER.length) % DIRECTION_ORDER.length;
+  if (delta === 1) {
+    return "right";
+  }
+  if (delta === DIRECTION_ORDER.length - 1) {
+    return "left";
+  }
+  return null;
 }
 
 function roundMetric(value) {

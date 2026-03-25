@@ -126,6 +126,13 @@ body.menu-open .playfield-card {
   font-size: 0.95rem;
 }
 
+.menu-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .menu-field-control {
   display: flex;
   align-items: center;
@@ -153,9 +160,26 @@ body.menu-open .playfield-card {
   padding-top: 2px;
 }
 
-.start-screen-button {
-  width: 100%;
+.menu-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-action-button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 54px;
   justify-content: center;
+}
+
+.menu-action-button:disabled,
+.menu-action-button.is-disabled {
+  background: rgba(50, 38, 31, 0.1);
+  color: rgba(50, 38, 31, 0.42);
+  box-shadow: none;
+  cursor: default;
+  transform: none;
 }
 
 .topbar {
@@ -225,6 +249,11 @@ button:hover {
   transform: translateY(-1px);
 }
 
+button:disabled {
+  cursor: default;
+  transform: none;
+}
+
 .primary-button {
   background: #1f8fdb;
   color: white;
@@ -234,6 +263,88 @@ button:hover {
 .ghost-button {
   background: rgba(50, 38, 31, 0.08);
   color: var(--ink);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 52px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.restart-icon,
+.play-icon,
+.continue-lock-indicator {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+}
+
+.restart-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.play-icon::before,
+.continue-lock-indicator::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 3px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 11px solid currentColor;
+}
+
+.continue-lock-indicator {
+  width: 18px;
+  height: 18px;
+  color: rgba(50, 38, 31, 0.34);
+  opacity: 0;
+  transition: opacity 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.continue-lock-indicator::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: rotate(-28deg);
+}
+
+.continue-lock-indicator.is-visible {
+  opacity: 0.52;
+}
+
+.continue-lock-indicator.is-active {
+  color: #b34545;
+  opacity: 1;
+  transform: scale(1.05);
 }
 
 .game-layout {
@@ -256,6 +367,9 @@ button:hover {
 .playfield-card {
   padding: 18px;
   overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+  justify-self: center;
 }
 
 #gameCanvas {
@@ -666,6 +780,11 @@ button:hover {
     grid-template-columns: 1fr;
   }
 
+  .playfield-card {
+    width: auto;
+    justify-self: stretch;
+  }
+
   .sidebar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -688,6 +807,10 @@ button:hover {
   .menu-custom-head {
     align-items: start;
     flex-direction: column;
+  }
+
+  .menu-action-button {
+    min-height: 50px;
   }
 
   .topbar {

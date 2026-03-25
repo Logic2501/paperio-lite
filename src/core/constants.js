@@ -1,5 +1,5 @@
 export const GRID_SIZE = 36;
-export const TICK_RATE = 12;
+export const TICK_RATE = 15;
 export const RESPAWN_PREVIEW_TICKS = TICK_RATE * 3;
 export const DEFAULT_MATCH_SECONDS = 60;
 export const MAX_EVENT_LOG = 6;

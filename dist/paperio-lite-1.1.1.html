@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Paper.io Lite 1.1.8</title>
+    <title>Paper.io Lite 1.1.1</title>
     <style>
 :root {
   --bg: #f3efe5;
@@ -133,13 +133,6 @@ body.menu-open .playfield-card {
   font-size: 0.95rem;
 }
 
-.menu-field-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
 .menu-field-control {
   display: flex;
   align-items: center;
@@ -167,26 +160,9 @@ body.menu-open .playfield-card {
   padding-top: 2px;
 }
 
-.menu-action-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.menu-action-button {
-  display: inline-grid;
-  place-items: center;
-  min-height: 54px;
+.start-screen-button {
+  width: 100%;
   justify-content: center;
-}
-
-.menu-action-button:disabled,
-.menu-action-button.is-disabled {
-  background: rgba(50, 38, 31, 0.1);
-  color: rgba(50, 38, 31, 0.42);
-  box-shadow: none;
-  cursor: default;
-  transform: none;
 }
 
 .topbar {
@@ -256,11 +232,6 @@ button:hover {
   transform: translateY(-1px);
 }
 
-button:disabled {
-  cursor: default;
-  transform: none;
-}
-
 .primary-button {
   background: #1f8fdb;
   color: white;
@@ -270,88 +241,6 @@ button:disabled {
 .ghost-button {
   background: rgba(50, 38, 31, 0.08);
   color: var(--ink);
-}
-
-.icon-button {
-  display: inline-grid;
-  place-items: center;
-  min-width: 52px;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.restart-icon,
-.play-icon,
-.continue-lock-indicator {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-}
-
-.restart-icon svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.play-icon::before,
-.continue-lock-indicator::before {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 3px;
-  width: 0;
-  height: 0;
-  border-top: 7px solid transparent;
-  border-bottom: 7px solid transparent;
-  border-left: 11px solid currentColor;
-}
-
-.continue-lock-indicator {
-  width: 18px;
-  height: 18px;
-  color: rgba(50, 38, 31, 0.34);
-  opacity: 0;
-  transition: opacity 160ms ease, color 160ms ease, transform 160ms ease;
-}
-
-.continue-lock-indicator::after {
-  content: "";
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  top: 8px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-  transform: rotate(-28deg);
-}
-
-.continue-lock-indicator.is-visible {
-  opacity: 0.52;
-}
-
-.continue-lock-indicator.is-active {
-  color: #b34545;
-  opacity: 1;
-  transform: scale(1.05);
 }
 
 .game-layout {
@@ -374,9 +263,6 @@ button:disabled {
 .playfield-card {
   padding: 18px;
   overflow: hidden;
-  width: fit-content;
-  max-width: 100%;
-  justify-self: center;
 }
 
 #gameCanvas {
@@ -787,11 +673,6 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .playfield-card {
-    width: auto;
-    justify-self: stretch;
-  }
-
   .sidebar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -814,10 +695,6 @@ button:disabled {
   .menu-custom-head {
     align-items: start;
     flex-direction: column;
-  }
-
-  .menu-action-button {
-    min-height: 50px;
   }
 
   .topbar {
@@ -994,33 +871,31 @@ button:disabled {
             <span class="menu-custom-note">More rule cards can land here later.</span>
           </div>
           <label class="menu-field">
-            <div class="menu-field-head">
-              <span>AI Count</span>
-              <span id="aiCountContinueLock" class="continue-lock-indicator" aria-hidden="true"></span>
-            </div>
+            <span>AI Count</span>
             <div class="menu-field-control">
-              <input id="aiCountInput" type="range" min="2" max="5" step="1" value="3" />
+              <input id="aiCountInput" type="range" min="1" max="5" step="1" value="3" />
               <strong id="aiCountValue">3</strong>
             </div>
           </label>
           <label class="menu-field">
             <span>Move Speed</span>
             <div class="menu-field-control">
-              <input id="tickRateInput" type="range" min="6" max="24" step="3" value="15" />
-              <strong id="tickRateValue">15</strong>
+              <select id="tickRateInput">
+                <option value="6">6</option>
+                <option value="12" selected>12</option>
+                <option value="18">18</option>
+              </select>
             </div>
           </label>
           <label class="menu-field">
-            <div class="menu-field-head">
-              <span>Board Size</span>
-              <span id="gridSizeContinueLock" class="continue-lock-indicator" aria-hidden="true"></span>
-            </div>
+            <span>Board Size</span>
             <div class="menu-field-control">
               <select id="gridSizeSelect">
                 <option value="24">24 x 24</option>
                 <option value="36" selected>36 x 36</option>
                 <option value="48">48 x 48</option>
                 <option value="60">60 x 60</option>
+                <option value="72">72 x 72</option>
               </select>
             </div>
           </label>
@@ -1029,21 +904,7 @@ button:disabled {
             <input id="suppressionToggle" type="checkbox" />
           </label>
         </section>
-        <div class="menu-action-row">
-          <button id="menuContinueButton" class="primary-button menu-action-button menu-continue-button" type="button" aria-label="Start Match">
-            <span class="play-icon" aria-hidden="true"></span>
-            <span class="sr-only">Start Match</span>
-          </button>
-          <button id="menuRestartButton" class="ghost-button menu-action-button menu-restart-button icon-button" type="button" aria-label="Restart">
-            <span class="restart-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
-              </svg>
-            </span>
-            <span class="sr-only">Restart</span>
-          </button>
-        </div>
+        <button id="menuStartButton" class="primary-button start-screen-button" type="button">Start Match</button>
       </div>
     </section>
     <div class="app-shell">
@@ -1064,15 +925,7 @@ button:disabled {
           </div>
           <p id="timerValue" class="timer-value compact-timer-value">02:00</p>
           <button id="menuOpenButtonDesktop" class="ghost-button menu-open-button" type="button">Menu</button>
-          <button id="restartButton" class="primary-button icon-button" type="button" aria-label="Restart">
-            <span class="restart-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
-              </svg>
-            </span>
-            <span class="sr-only">Restart</span>
-          </button>
+          <button id="restartButton" class="primary-button" type="button">Restart</button>
           <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
         </div>
       </header>
@@ -1082,15 +935,7 @@ button:disabled {
           <h2 id="finalTitle">Match Complete</h2>
           <p id="finalSubtitle" class="final-subtitle"></p>
           <ol id="finalRankings" class="final-rankings"></ol>
-          <button id="overlayRestartButton" class="primary-button overlay-restart-button icon-button" type="button" aria-label="Restart">
-            <span class="restart-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
-              </svg>
-            </span>
-            <span class="sr-only">Restart</span>
-          </button>
+          <button id="overlayRestartButton" class="primary-button overlay-restart-button" type="button">Restart</button>
         </div>
       </section>
       <main class="game-layout">
@@ -1146,7 +991,7 @@ button:disabled {
   const __modules = {
     "/src/core/constants.js": function(exports, __require) {
 const GRID_SIZE = 36;
-const TICK_RATE = 15;
+const TICK_RATE = 12;
 const RESPAWN_PREVIEW_TICKS = TICK_RATE * 3;
 const DEFAULT_MATCH_SECONDS = 60;
 const MAX_EVENT_LOG = 6;
@@ -1616,12 +1461,7 @@ class Renderer {
       }
 
       const headPosition = this.getPlayerRenderPosition(player, state.frameAlpha);
-      const settledTrail = player.trail.map((cell) => ({ ...cell }));
-      const lastTrailCell = settledTrail[settledTrail.length - 1];
-      if (lastTrailCell && lastTrailCell.x === player.position.x && lastTrailCell.y === player.position.y) {
-        settledTrail.pop();
-      }
-      const points = [...settledTrail, headPosition];
+      const points = [...player.trail.map((cell) => ({ ...cell })), headPosition];
       const trailWidth = this.cellSize;
 
       if (!points.length) {
@@ -2150,9 +1990,9 @@ class Game {
       ...config,
       seed: config.seed ?? Date.now(),
     };
-    this.config.aiCount = clamp(this.config.aiCount, 2, 5);
-    this.config.gridSize = clamp(this.config.gridSize, 24, 60);
-    this.config.tickRate = normalizeTickRate(this.config.tickRate);
+    this.config.aiCount = clamp(this.config.aiCount, 1, 5);
+    this.config.gridSize = clamp(this.config.gridSize, 24, 72);
+    this.config.tickRate = clamp(this.config.tickRate, 6, 18);
     this.config.matchSeconds = clamp(this.config.matchSeconds, 30, 600);
 
     this.rng = createRng(this.config.seed);
@@ -2243,7 +2083,7 @@ class Game {
   }
 
   setTickRate(nextTickRate) {
-    const resolved = normalizeTickRate(nextTickRate);
+    const resolved = clamp(Number(nextTickRate), 6, 18);
     if (resolved === this.config.tickRate) {
       return;
     }
@@ -3000,7 +2840,7 @@ class Game {
     this.banner = "The final push collapsed at the finish line.";
     this.addEvent(this.banner);
     this.completeMatch({
-      title: "【功亏一篑】",
+      title: "【弄巧成拙】",
       subtitle: "The last rival fell, but the player did not survive the final countdown.",
       rankings,
     });
@@ -3341,12 +3181,6 @@ function rollingAverage(previous, next, count) {
   return previous + (next - previous) / boundedCount;
 }
 
-function normalizeTickRate(value) {
-  const clamped = clamp(Number(value), 6, 24);
-  const stepped = 6 + Math.round((clamped - 6) / 3) * 3;
-  return clamp(stepped, 6, 24);
-}
-
 function getTurnSide(fromDirection, toDirection) {
   if (!fromDirection || !toDirection || fromDirection === toDirection) {
     return null;
@@ -3412,19 +3246,15 @@ const hud = new Hud({
 
 const menuElements = {
   startScreen: document.getElementById("startScreen"),
-  continueButton: document.getElementById("menuContinueButton"),
-  restartButton: document.getElementById("menuRestartButton"),
+  startButton: document.getElementById("menuStartButton"),
   openButtonDesktop: document.getElementById("menuOpenButtonDesktop"),
   openButtonMobile: document.getElementById("menuOpenButtonMobile"),
   modeTimedButton: document.getElementById("menuModeTimed"),
   modeEndlessButton: document.getElementById("menuModeEndless"),
   aiCountInput: document.getElementById("aiCountInput"),
   aiCountValue: document.getElementById("aiCountValue"),
-  aiCountContinueLock: document.getElementById("aiCountContinueLock"),
   tickRateInput: document.getElementById("tickRateInput"),
-  tickRateValue: document.getElementById("tickRateValue"),
   gridSizeSelect: document.getElementById("gridSizeSelect"),
-  gridSizeContinueLock: document.getElementById("gridSizeContinueLock"),
   suppressionToggle: document.getElementById("suppressionToggle"),
 };
 
@@ -3432,7 +3262,6 @@ const menuState = {
   mode: GAME_MODE.TIMED,
   editingInGame: false,
   resumeAfterClose: false,
-  baselineConfig: null,
 };
 
 let game = null;
@@ -3490,52 +3319,27 @@ function applyConfigToMenu(options) {
 
 function syncMenuUi() {
   menuElements.aiCountValue.textContent = menuElements.aiCountInput.value;
-  menuElements.tickRateValue.textContent = menuElements.tickRateInput.value;
   menuElements.modeTimedButton.classList.toggle("active", menuState.mode === GAME_MODE.TIMED);
   menuElements.modeEndlessButton.classList.toggle("active", menuState.mode === GAME_MODE.ENDLESS);
+  menuElements.startButton.textContent = menuState.editingInGame ? "Continue" : "Start Match";
 
-  const aiCountChanged =
-    menuState.editingInGame &&
-    menuState.baselineConfig &&
-    Number(menuElements.aiCountInput.value) !== Number(menuState.baselineConfig.aiCount);
-  const gridSizeChanged =
-    menuState.editingInGame &&
-    menuState.baselineConfig &&
-    Number(menuElements.gridSizeSelect.value) !== Number(menuState.baselineConfig.gridSize);
-  const requiresRestart = Boolean(aiCountChanged || gridSizeChanged);
-
-  menuElements.continueButton.disabled = requiresRestart;
-  menuElements.continueButton.classList.toggle("is-disabled", requiresRestart);
-  menuElements.continueButton.setAttribute("aria-label", menuState.editingInGame ? "Continue" : "Start Match");
-  menuElements.restartButton.disabled = !menuState.editingInGame;
-  menuElements.restartButton.classList.toggle("is-disabled", !menuState.editingInGame);
-
-  menuElements.aiCountContinueLock.classList.toggle("is-visible", menuState.editingInGame);
-  menuElements.aiCountContinueLock.classList.toggle("is-active", aiCountChanged);
-  menuElements.gridSizeContinueLock.classList.toggle("is-visible", menuState.editingInGame);
-  menuElements.gridSizeContinueLock.classList.toggle("is-active", gridSizeChanged);
-
-  menuElements.aiCountInput.disabled = false;
-  menuElements.gridSizeSelect.disabled = false;
-  menuElements.suppressionToggle.disabled = menuState.editingInGame;
-  menuElements.modeTimedButton.disabled = menuState.editingInGame;
-  menuElements.modeEndlessButton.disabled = menuState.editingInGame;
+  const disableRestartSettings = menuState.editingInGame;
+  menuElements.aiCountInput.disabled = disableRestartSettings;
+  menuElements.gridSizeSelect.disabled = disableRestartSettings;
+  menuElements.suppressionToggle.disabled = disableRestartSettings;
+  menuElements.modeTimedButton.disabled = disableRestartSettings;
+  menuElements.modeEndlessButton.disabled = disableRestartSettings;
 }
 
 function openMenu() {
   if (game && !game.config.attractMode && !game.matchComplete) {
     menuState.editingInGame = true;
     menuState.resumeAfterClose = !game.paused;
-    menuState.baselineConfig = {
-      aiCount: game.config.aiCount,
-      gridSize: game.config.gridSize,
-    };
     applyConfigToMenu(game.config);
     game.setMenuPause(true);
   } else {
     menuState.editingInGame = false;
     menuState.resumeAfterClose = false;
-    menuState.baselineConfig = null;
     applyConfigToMenu(DEFAULT_GAME_OPTIONS);
     createDemoGame();
   }
@@ -3543,7 +3347,7 @@ function openMenu() {
   menuElements.startScreen.classList.remove("hidden");
 }
 
-function continueConfiguredGame() {
+function startConfiguredGame() {
   if (menuState.editingInGame && game && !game.config.attractMode) {
     game.setTickRate(Number(menuElements.tickRateInput.value));
     document.body.classList.remove("menu-open");
@@ -3553,7 +3357,6 @@ function continueConfiguredGame() {
     }
     menuState.editingInGame = false;
     menuState.resumeAfterClose = false;
-    menuState.baselineConfig = null;
     syncMenuUi();
     return;
   }
@@ -3562,22 +3365,11 @@ function continueConfiguredGame() {
   menuElements.startScreen.classList.add("hidden");
   menuState.editingInGame = false;
   menuState.resumeAfterClose = false;
-  menuState.baselineConfig = null;
-  createGame(readMenuConfig());
-}
-
-function restartConfiguredGame() {
-  document.body.classList.remove("menu-open");
-  menuElements.startScreen.classList.add("hidden");
-  menuState.editingInGame = false;
-  menuState.resumeAfterClose = false;
-  menuState.baselineConfig = null;
   createGame(readMenuConfig());
 }
 
 menuElements.aiCountInput.addEventListener("input", syncMenuUi);
 menuElements.tickRateInput.addEventListener("input", syncMenuUi);
-menuElements.gridSizeSelect.addEventListener("change", syncMenuUi);
 menuElements.modeTimedButton.addEventListener("click", () => {
   menuState.mode = GAME_MODE.TIMED;
   syncMenuUi();
@@ -3586,8 +3378,7 @@ menuElements.modeEndlessButton.addEventListener("click", () => {
   menuState.mode = GAME_MODE.ENDLESS;
   syncMenuUi();
 });
-menuElements.continueButton.addEventListener("click", continueConfiguredGame);
-menuElements.restartButton.addEventListener("click", restartConfiguredGame);
+menuElements.startButton.addEventListener("click", startConfiguredGame);
 menuElements.openButtonDesktop.addEventListener("click", openMenu);
 menuElements.openButtonMobile.addEventListener("click", openMenu);
 
