@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Paper.io Lite 1.2.1</title>
+    <title>Paper.io Lite 1.1.10</title>
     <style>
 :root {
   --bg: #f3efe5;
@@ -96,7 +96,15 @@ body.menu-open .playfield-card {
 }
 
 .menu-mode-row {
-  display: block;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-mode-button.active {
+  background: rgba(31, 143, 219, 0.12);
+  color: #0d5db8;
+  box-shadow: inset 0 0 0 1px rgba(31, 143, 219, 0.22);
 }
 
 .menu-custom-panel {
@@ -149,27 +157,6 @@ body.menu-open .playfield-card {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   font: inherit;
-}
-
-.ai-count-label-preview {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
-  min-width: 88px;
-  min-height: 24px;
-  flex-wrap: wrap;
-}
-
-.ai-count-swatch {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  border: 2px solid rgba(49, 36, 30, 0.42);
-  background: var(--ai-preview-color);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    0 1px 2px rgba(49, 36, 30, 0.12);
 }
 
 .menu-toggle-row {
@@ -238,55 +225,8 @@ h1 {
 }
 
 .menu-open-button {
-  min-width: 52px;
+  min-width: 110px;
   justify-self: center;
-}
-
-.mode-toggle-button {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
-  width: 100%;
-  min-width: 0;
-  padding: 4px;
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.mode-toggle-button::after {
-  content: "";
-  position: absolute;
-  top: 9px;
-  bottom: 9px;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-0.5px);
-  background: rgba(50, 38, 31, 0.16);
-  pointer-events: none;
-}
-
-.mode-toggle-segment {
-  position: relative;
-  z-index: 1;
-  display: inline-grid;
-  place-items: center;
-  min-height: 40px;
-  color: rgba(50, 38, 31, 0.42);
-  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
-}
-
-.mode-toggle-button[data-mode="timed"] .mode-toggle-segment[data-segment="timed"],
-.mode-toggle-button[data-mode="endless"] .mode-toggle-segment[data-segment="endless"] {
-  background: rgba(31, 143, 219, 0.16);
-  color: #0d5db8;
-  box-shadow: inset 0 0 0 1px rgba(31, 143, 219, 0.18);
-}
-
-.mode-toggle-button[data-mode="timed"] .mode-toggle-segment[data-segment="endless"],
-.mode-toggle-button[data-mode="endless"] .mode-toggle-segment[data-segment="timed"] {
-  background: transparent;
-  color: rgba(50, 38, 31, 0.42);
 }
 
 .compact-territory {
@@ -351,9 +291,6 @@ button:disabled {
 }
 
 .restart-icon,
-.menu-icon,
-.timed-mode-icon,
-.endless-mode-icon,
 .play-icon,
 .continue-lock-indicator {
   position: relative;
@@ -368,44 +305,6 @@ button:disabled {
   width: 100%;
   height: 100%;
   fill: currentColor;
-}
-
-.menu-icon svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-.timed-mode-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.endless-mode-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.timed-mode-icon svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  fill: currentColor;
-}
-
-.endless-mode-icon svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 .play-icon::before,
@@ -980,14 +879,6 @@ button:disabled {
     align-self: stretch;
   }
 
-  #modeButton {
-    padding: 2px;
-  }
-
-  #modeButton .mode-toggle-segment {
-    min-height: 22px;
-  }
-
   #restartButton {
     grid-area: restart;
   }
@@ -1090,25 +981,8 @@ button:disabled {
         <h2>Paper.io Lite</h2>
         <p class="start-screen-copy">Watch the arena, tune the rules, then jump into the next round.</p>
         <div class="menu-mode-row" role="group" aria-label="Select mode">
-          <button id="menuModeToggleButton" class="ghost-button mode-toggle-button" type="button" aria-label="Toggle mode" data-mode="timed">
-            <span class="mode-toggle-segment mode-toggle-segment-timed" data-segment="timed">
-              <span class="timed-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 16 16" focusable="false">
-                  <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
-                  <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Timed</span>
-            </span>
-            <span class="mode-toggle-segment mode-toggle-segment-endless" data-segment="endless">
-              <span class="endless-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Endless</span>
-            </span>
-          </button>
+          <button id="menuModeTimed" class="ghost-button menu-mode-button active" type="button">Timed</button>
+          <button id="menuModeEndless" class="ghost-button menu-mode-button" type="button">Endless</button>
         </div>
         <section class="menu-custom-panel" aria-label="Custom options">
           <div class="menu-custom-head">
@@ -1117,7 +991,7 @@ button:disabled {
           </div>
           <label class="menu-field">
             <div class="menu-field-head">
-              <div id="aiCountLabelPreview" class="ai-count-label-preview" aria-hidden="true"></div>
+              <span>AI Count</span>
               <span id="aiCountContinueLock" class="continue-lock-indicator" aria-hidden="true"></span>
             </div>
             <div class="menu-field-control">
@@ -1184,16 +1058,7 @@ button:disabled {
             </div>
           </div>
           <p id="timerValue" class="timer-value compact-timer-value">02:00</p>
-          <button id="menuOpenButtonDesktop" class="ghost-button menu-open-button icon-button" type="button" aria-label="Menu">
-            <span class="menu-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M4 6H20"></path>
-                <path d="M4 12H20"></path>
-                <path d="M4 18H20"></path>
-              </svg>
-            </span>
-            <span class="sr-only">Menu</span>
-          </button>
+          <button id="menuOpenButtonDesktop" class="ghost-button menu-open-button" type="button">Menu</button>
           <button id="restartButton" class="primary-button icon-button" type="button" aria-label="Restart">
             <span class="restart-icon" aria-hidden="true">
               <svg viewBox="0 0 32 32" focusable="false">
@@ -1202,25 +1067,7 @@ button:disabled {
             </span>
             <span class="sr-only">Restart</span>
           </button>
-          <button id="modeButton" class="ghost-button mode-toggle-button" type="button" aria-label="Toggle mode" data-mode="timed">
-            <span class="mode-toggle-segment mode-toggle-segment-timed" data-segment="timed">
-              <span class="timed-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 16 16" focusable="false">
-                  <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
-                  <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Timed</span>
-            </span>
-            <span class="mode-toggle-segment mode-toggle-segment-endless" data-segment="endless">
-              <span class="endless-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Endless</span>
-            </span>
-          </button>
+          <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
         </div>
       </header>
       <section id="finalResults" class="final-results hidden" aria-live="polite">
@@ -1246,16 +1093,7 @@ button:disabled {
           <div id="centerCountdown" class="center-countdown hidden"></div>
           <section class="mobile-console" aria-label="Touch controls">
             <div class="mobile-console-head">
-              <button id="menuOpenButtonMobile" class="console-menu-button console-icon-button" type="button" aria-label="Menu">
-                <span class="menu-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false">
-                    <path d="M4 6H20"></path>
-                    <path d="M4 12H20"></path>
-                    <path d="M4 18H20"></path>
-                  </svg>
-                </span>
-                <span class="sr-only">Menu</span>
-              </button>
+              <button id="menuOpenButtonMobile" class="console-menu-button" type="button">Menu</button>
               <button id="pauseButton" class="console-pause-button console-icon-button" type="button" aria-label="Pause">
                 <span class="pause-icon" aria-hidden="true"></span>
               </button>
@@ -2015,7 +1853,7 @@ class Hud {
     this.elements.territoryValue.textContent = formatPercent(share);
     this.elements.timerValue.textContent =
       state.mode === "timed" ? formatTime(state.remainingSeconds) : "ENDLESS";
-    this.renderModeButton(state.mode);
+    this.elements.modeButton.textContent = state.mode === "timed" ? "Timed" : "Endless";
     this.elements.pauseButton.classList.toggle("is-paused", state.paused && !state.matchComplete);
     this.elements.pauseButton.disabled = state.matchComplete;
     this.renderLeaderboard(state.rankings, state.playerMap, state.percentages);
@@ -2095,11 +1933,6 @@ class Hud {
     }
     this.elements.centerCountdown.textContent = text;
     this.elements.centerCountdown.classList.remove("hidden");
-  }
-
-  renderModeButton(mode) {
-    this.elements.modeButton.dataset.mode = mode;
-    this.elements.modeButton.setAttribute("aria-label", "Toggle mode");
   }
 }
 
@@ -3536,7 +3369,7 @@ Object.assign(exports, { Game });
 
 },
     "/src/main.js": function(exports, __require) {
-const { DEFAULT_GAME_OPTIONS, GAME_MODE, PLAYER_COLORS } = __require("/src/core/constants.js");
+const { DEFAULT_GAME_OPTIONS, GAME_MODE } = __require("/src/core/constants.js");
 const { InputController } = __require("/src/core/input.js");
 const { Renderer } = __require("/src/render/Renderer.js");
 const { Hud } = __require("/src/ui/Hud.js");
@@ -3576,9 +3409,9 @@ const menuElements = {
   restartButton: document.getElementById("menuRestartButton"),
   openButtonDesktop: document.getElementById("menuOpenButtonDesktop"),
   openButtonMobile: document.getElementById("menuOpenButtonMobile"),
-  modeToggleButton: document.getElementById("menuModeToggleButton"),
+  modeTimedButton: document.getElementById("menuModeTimed"),
+  modeEndlessButton: document.getElementById("menuModeEndless"),
   aiCountInput: document.getElementById("aiCountInput"),
-  aiCountLabelPreview: document.getElementById("aiCountLabelPreview"),
   aiCountValue: document.getElementById("aiCountValue"),
   aiCountContinueLock: document.getElementById("aiCountContinueLock"),
   tickRateInput: document.getElementById("tickRateInput"),
@@ -3649,9 +3482,10 @@ function applyConfigToMenu(options) {
 }
 
 function syncMenuUi() {
-  renderAiCountPreview(Number(menuElements.aiCountInput.value));
+  menuElements.aiCountValue.textContent = menuElements.aiCountInput.value;
   menuElements.tickRateValue.textContent = menuElements.tickRateInput.value;
-  renderModeToggle(menuElements.modeToggleButton, menuState.mode);
+  menuElements.modeTimedButton.classList.toggle("active", menuState.mode === GAME_MODE.TIMED);
+  menuElements.modeEndlessButton.classList.toggle("active", menuState.mode === GAME_MODE.ENDLESS);
 
   const aiCountChanged =
     menuState.editingInGame &&
@@ -3677,27 +3511,8 @@ function syncMenuUi() {
   menuElements.aiCountInput.disabled = false;
   menuElements.gridSizeSelect.disabled = false;
   menuElements.suppressionToggle.disabled = menuState.editingInGame;
-  menuElements.modeToggleButton.disabled = menuState.editingInGame;
-}
-
-function renderAiCountPreview(aiCount) {
-  const swatches = PLAYER_COLORS.slice(1, 1 + aiCount)
-    .map(
-      (color, index) => `
-        <span
-          class="ai-count-swatch"
-          style="--ai-preview-color: ${color}"
-          aria-label="AI ${index + 1}"
-        ></span>
-      `,
-    )
-    .join("");
-  menuElements.aiCountLabelPreview.innerHTML = swatches;
-  menuElements.aiCountValue.textContent = String(aiCount);
-}
-
-function renderModeToggle(button, mode) {
-  button.dataset.mode = mode;
+  menuElements.modeTimedButton.disabled = menuState.editingInGame;
+  menuElements.modeEndlessButton.disabled = menuState.editingInGame;
 }
 
 function openMenu() {
@@ -3756,8 +3571,12 @@ function restartConfiguredGame() {
 menuElements.aiCountInput.addEventListener("input", syncMenuUi);
 menuElements.tickRateInput.addEventListener("input", syncMenuUi);
 menuElements.gridSizeSelect.addEventListener("change", syncMenuUi);
-menuElements.modeToggleButton.addEventListener("click", () => {
-  menuState.mode = menuState.mode === GAME_MODE.TIMED ? GAME_MODE.ENDLESS : GAME_MODE.TIMED;
+menuElements.modeTimedButton.addEventListener("click", () => {
+  menuState.mode = GAME_MODE.TIMED;
+  syncMenuUi();
+});
+menuElements.modeEndlessButton.addEventListener("click", () => {
+  menuState.mode = GAME_MODE.ENDLESS;
   syncMenuUi();
 });
 menuElements.continueButton.addEventListener("click", continueConfiguredGame);

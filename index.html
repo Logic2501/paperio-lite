@@ -13,8 +13,25 @@
         <h2>Paper.io Lite</h2>
         <p class="start-screen-copy">Watch the arena, tune the rules, then jump into the next round.</p>
         <div class="menu-mode-row" role="group" aria-label="Select mode">
-          <button id="menuModeTimed" class="ghost-button menu-mode-button active" type="button">Timed</button>
-          <button id="menuModeEndless" class="ghost-button menu-mode-button" type="button">Endless</button>
+          <button id="menuModeToggleButton" class="ghost-button mode-toggle-button" type="button" aria-label="Toggle mode" data-mode="timed">
+            <span class="mode-toggle-segment mode-toggle-segment-timed" data-segment="timed">
+              <span class="timed-mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" focusable="false">
+                  <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
+                  <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
+                </svg>
+              </span>
+              <span class="sr-only">Timed</span>
+            </span>
+            <span class="mode-toggle-segment mode-toggle-segment-endless" data-segment="endless">
+              <span class="endless-mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
+                </svg>
+              </span>
+              <span class="sr-only">Endless</span>
+            </span>
+          </button>
         </div>
         <section class="menu-custom-panel" aria-label="Custom options">
           <div class="menu-custom-head">
@@ -23,7 +40,7 @@
           </div>
           <label class="menu-field">
             <div class="menu-field-head">
-              <span>AI Count</span>
+              <div id="aiCountLabelPreview" class="ai-count-label-preview" aria-hidden="true"></div>
               <span id="aiCountContinueLock" class="continue-lock-indicator" aria-hidden="true"></span>
             </div>
             <div class="menu-field-control">
@@ -64,9 +81,8 @@
           </button>
           <button id="menuRestartButton" class="ghost-button menu-action-button menu-restart-button icon-button" type="button" aria-label="Restart">
             <span class="restart-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+              <svg viewBox="0 0 32 32" focusable="false">
+                <path d="M16 4a12 12 0 1 0 11.4 15h-3.1A9 9 0 1 1 16 7c2 0 3.8.6 5.3 1.7L18 12h10V2l-4.6 4.6A11.9 11.9 0 0 0 16 4z"></path>
               </svg>
             </span>
             <span class="sr-only">Restart</span>
@@ -91,17 +107,43 @@
             </div>
           </div>
           <p id="timerValue" class="timer-value compact-timer-value">02:00</p>
-          <button id="menuOpenButtonDesktop" class="ghost-button menu-open-button" type="button">Menu</button>
+          <button id="menuOpenButtonDesktop" class="ghost-button menu-open-button icon-button" type="button" aria-label="Menu">
+            <span class="menu-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M4 6H20"></path>
+                <path d="M4 12H20"></path>
+                <path d="M4 18H20"></path>
+              </svg>
+            </span>
+            <span class="sr-only">Menu</span>
+          </button>
           <button id="restartButton" class="primary-button icon-button" type="button" aria-label="Restart">
             <span class="restart-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+              <svg viewBox="0 0 32 32" focusable="false">
+                <path d="M16 4a12 12 0 1 0 11.4 15h-3.1A9 9 0 1 1 16 7c2 0 3.8.6 5.3 1.7L18 12h10V2l-4.6 4.6A11.9 11.9 0 0 0 16 4z"></path>
               </svg>
             </span>
             <span class="sr-only">Restart</span>
           </button>
-          <button id="modeButton" class="ghost-button" type="button">Mode: Timed</button>
+          <button id="modeButton" class="ghost-button mode-toggle-button" type="button" aria-label="Toggle mode" data-mode="timed">
+            <span class="mode-toggle-segment mode-toggle-segment-timed" data-segment="timed">
+              <span class="timed-mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" focusable="false">
+                  <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
+                  <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
+                </svg>
+              </span>
+              <span class="sr-only">Timed</span>
+            </span>
+            <span class="mode-toggle-segment mode-toggle-segment-endless" data-segment="endless">
+              <span class="endless-mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
+                </svg>
+              </span>
+              <span class="sr-only">Endless</span>
+            </span>
+          </button>
         </div>
       </header>
       <section id="finalResults" class="final-results hidden" aria-live="polite">
@@ -112,9 +154,8 @@
           <ol id="finalRankings" class="final-rankings"></ol>
           <button id="overlayRestartButton" class="primary-button overlay-restart-button icon-button" type="button" aria-label="Restart">
             <span class="restart-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M7.2 17.7A7.5 7.5 0 1 1 18.2 7.7"></path>
-                <path d="M15 5.1L18.2 7.7L15 10.3"></path>
+              <svg viewBox="0 0 32 32" focusable="false">
+                <path d="M16 4a12 12 0 1 0 11.4 15h-3.1A9 9 0 1 1 16 7c2 0 3.8.6 5.3 1.7L18 12h10V2l-4.6 4.6A11.9 11.9 0 0 0 16 4z"></path>
               </svg>
             </span>
             <span class="sr-only">Restart</span>
@@ -128,7 +169,16 @@
           <div id="centerCountdown" class="center-countdown hidden"></div>
           <section class="mobile-console" aria-label="Touch controls">
             <div class="mobile-console-head">
-              <button id="menuOpenButtonMobile" class="console-menu-button" type="button">Menu</button>
+              <button id="menuOpenButtonMobile" class="console-menu-button console-icon-button" type="button" aria-label="Menu">
+                <span class="menu-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M4 6H20"></path>
+                    <path d="M4 12H20"></path>
+                    <path d="M4 18H20"></path>
+                  </svg>
+                </span>
+                <span class="sr-only">Menu</span>
+              </button>
               <button id="pauseButton" class="console-pause-button console-icon-button" type="button" aria-label="Pause">
                 <span class="pause-icon" aria-hidden="true"></span>
               </button>
