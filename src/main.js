@@ -1,4 +1,4 @@
-import { DEFAULT_GAME_OPTIONS, GAME_MODE } from "./core/constants.js";
+import { DEFAULT_GAME_OPTIONS, GAME_MODE, PLAYER_COLORS } from "./core/constants.js";
 import { InputController } from "./core/input.js";
 import { Renderer } from "./render/Renderer.js";
 import { Hud } from "./ui/Hud.js";
@@ -38,9 +38,9 @@ const menuElements = {
   restartButton: document.getElementById("menuRestartButton"),
   openButtonDesktop: document.getElementById("menuOpenButtonDesktop"),
   openButtonMobile: document.getElementById("menuOpenButtonMobile"),
-  modeTimedButton: document.getElementById("menuModeTimed"),
-  modeEndlessButton: document.getElementById("menuModeEndless"),
+  modeToggleButton: document.getElementById("menuModeToggleButton"),
   aiCountInput: document.getElementById("aiCountInput"),
+  aiCountLabelPreview: document.getElementById("aiCountLabelPreview"),
   aiCountValue: document.getElementById("aiCountValue"),
   aiCountContinueLock: document.getElementById("aiCountContinueLock"),
   tickRateInput: document.getElementById("tickRateInput"),
@@ -111,10 +111,9 @@ function applyConfigToMenu(options) {
 }
 
 function syncMenuUi() {
-  menuElements.aiCountValue.textContent = menuElements.aiCountInput.value;
+  renderAiCountPreview(Number(menuElements.aiCountInput.value));
   menuElements.tickRateValue.textContent = menuElements.tickRateInput.value;
-  menuElements.modeTimedButton.classList.toggle("active", menuState.mode === GAME_MODE.TIMED);
-  menuElements.modeEndlessButton.classList.toggle("active", menuState.mode === GAME_MODE.ENDLESS);
+  renderModeToggle(menuElements.modeToggleButton, menuState.mode);
 
   const aiCountChanged =
     menuState.editingInGame &&
@@ -140,8 +139,27 @@ function syncMenuUi() {
   menuElements.aiCountInput.disabled = false;
   menuElements.gridSizeSelect.disabled = false;
   menuElements.suppressionToggle.disabled = menuState.editingInGame;
-  menuElements.modeTimedButton.disabled = menuState.editingInGame;
-  menuElements.modeEndlessButton.disabled = menuState.editingInGame;
+  menuElements.modeToggleButton.disabled = menuState.editingInGame;
+}
+
+function renderAiCountPreview(aiCount) {
+  const swatches = PLAYER_COLORS.slice(1, 1 + aiCount)
+    .map(
+      (color, index) => `
+        <span
+          class="ai-count-swatch"
+          style="--ai-preview-color: ${color}"
+          aria-label="AI ${index + 1}"
+        ></span>
+      `,
+    )
+    .join("");
+  menuElements.aiCountLabelPreview.innerHTML = swatches;
+  menuElements.aiCountValue.textContent = String(aiCount);
+}
+
+function renderModeToggle(button, mode) {
+  button.dataset.mode = mode;
 }
 
 function openMenu() {
@@ -200,12 +218,8 @@ function restartConfiguredGame() {
 menuElements.aiCountInput.addEventListener("input", syncMenuUi);
 menuElements.tickRateInput.addEventListener("input", syncMenuUi);
 menuElements.gridSizeSelect.addEventListener("change", syncMenuUi);
-menuElements.modeTimedButton.addEventListener("click", () => {
-  menuState.mode = GAME_MODE.TIMED;
-  syncMenuUi();
-});
-menuElements.modeEndlessButton.addEventListener("click", () => {
-  menuState.mode = GAME_MODE.ENDLESS;
+menuElements.modeToggleButton.addEventListener("click", () => {
+  menuState.mode = menuState.mode === GAME_MODE.TIMED ? GAME_MODE.ENDLESS : GAME_MODE.TIMED;
   syncMenuUi();
 });
 menuElements.continueButton.addEventListener("click", continueConfiguredGame);

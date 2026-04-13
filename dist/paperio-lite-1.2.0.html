@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Paper.io Lite 1.2.1</title>
+    <title>Paper.io Lite 1.2.0</title>
     <style>
 :root {
   --bg: #f3efe5;
@@ -96,7 +96,15 @@ body.menu-open .playfield-card {
 }
 
 .menu-mode-row {
-  display: block;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-mode-button.active {
+  background: rgba(31, 143, 219, 0.12);
+  color: #0d5db8;
+  box-shadow: inset 0 0 0 1px rgba(31, 143, 219, 0.22);
 }
 
 .menu-custom-panel {
@@ -242,51 +250,10 @@ h1 {
   justify-self: center;
 }
 
-.mode-toggle-button {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
-  width: 100%;
-  min-width: 0;
-  padding: 4px;
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.mode-toggle-button::after {
-  content: "";
-  position: absolute;
-  top: 9px;
-  bottom: 9px;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-0.5px);
-  background: rgba(50, 38, 31, 0.16);
-  pointer-events: none;
-}
-
-.mode-toggle-segment {
-  position: relative;
-  z-index: 1;
+.mode-icon-button,
+.mode-indicator-button {
   display: inline-grid;
   place-items: center;
-  min-height: 40px;
-  color: rgba(50, 38, 31, 0.42);
-  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
-}
-
-.mode-toggle-button[data-mode="timed"] .mode-toggle-segment[data-segment="timed"],
-.mode-toggle-button[data-mode="endless"] .mode-toggle-segment[data-segment="endless"] {
-  background: rgba(31, 143, 219, 0.16);
-  color: #0d5db8;
-  box-shadow: inset 0 0 0 1px rgba(31, 143, 219, 0.18);
-}
-
-.mode-toggle-button[data-mode="timed"] .mode-toggle-segment[data-segment="endless"],
-.mode-toggle-button[data-mode="endless"] .mode-toggle-segment[data-segment="timed"] {
-  background: transparent;
-  color: rgba(50, 38, 31, 0.42);
 }
 
 .compact-territory {
@@ -980,14 +947,6 @@ button:disabled {
     align-self: stretch;
   }
 
-  #modeButton {
-    padding: 2px;
-  }
-
-  #modeButton .mode-toggle-segment {
-    min-height: 22px;
-  }
-
   #restartButton {
     grid-area: restart;
   }
@@ -1090,24 +1049,22 @@ button:disabled {
         <h2>Paper.io Lite</h2>
         <p class="start-screen-copy">Watch the arena, tune the rules, then jump into the next round.</p>
         <div class="menu-mode-row" role="group" aria-label="Select mode">
-          <button id="menuModeToggleButton" class="ghost-button mode-toggle-button" type="button" aria-label="Toggle mode" data-mode="timed">
-            <span class="mode-toggle-segment mode-toggle-segment-timed" data-segment="timed">
-              <span class="timed-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 16 16" focusable="false">
-                  <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
-                  <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Timed</span>
+          <button id="menuModeTimed" class="ghost-button menu-mode-button mode-icon-button active" type="button" aria-label="Timed">
+            <span class="timed-mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" focusable="false">
+                <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
+                <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
+              </svg>
             </span>
-            <span class="mode-toggle-segment mode-toggle-segment-endless" data-segment="endless">
-              <span class="endless-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Endless</span>
+            <span class="sr-only">Timed</span>
+          </button>
+          <button id="menuModeEndless" class="ghost-button menu-mode-button mode-icon-button" type="button" aria-label="Endless">
+            <span class="endless-mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
+              </svg>
             </span>
+            <span class="sr-only">Endless</span>
           </button>
         </div>
         <section class="menu-custom-panel" aria-label="Custom options">
@@ -1202,24 +1159,14 @@ button:disabled {
             </span>
             <span class="sr-only">Restart</span>
           </button>
-          <button id="modeButton" class="ghost-button mode-toggle-button" type="button" aria-label="Toggle mode" data-mode="timed">
-            <span class="mode-toggle-segment mode-toggle-segment-timed" data-segment="timed">
-              <span class="timed-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 16 16" focusable="false">
-                  <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
-                  <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Timed</span>
+          <button id="modeButton" class="ghost-button mode-indicator-button" type="button" aria-label="Timed">
+            <span class="timed-mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" focusable="false">
+                <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
+                <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
+              </svg>
             </span>
-            <span class="mode-toggle-segment mode-toggle-segment-endless" data-segment="endless">
-              <span class="endless-mode-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
-                </svg>
-              </span>
-              <span class="sr-only">Endless</span>
-            </span>
+            <span class="sr-only">Timed</span>
           </button>
         </div>
       </header>
@@ -1981,6 +1928,25 @@ Object.assign(exports, { Renderer });
 const { MAX_EVENT_LOG } = __require("/src/core/constants.js");
 const { formatPercent, formatTime } = __require("/src/core/utils.js");
 
+const TIMED_MODE_ICON = `
+  <span class="timed-mode-icon" aria-hidden="true">
+    <svg viewBox="0 0 16 16" focusable="false">
+      <path d="M8.5 5.6a.5.5 0 1 0-1 0v2.9h-3a.5.5 0 0 0 0 1H8a.5.5 0 0 0 .5-.5z"></path>
+      <path d="M6.5 1A.5.5 0 0 1 7 .5h2a.5.5 0 0 1 0 1v.57c1.36.196 2.594.78 3.584 1.64l.012-.013.354-.354-.354-.353a.5.5 0 0 1 .707-.708l1.414 1.415a.5.5 0 1 1-.707.707l-.353-.354-.354.354-.013.012A7 7 0 1 1 7 2.071V1.5a.5.5 0 0 1-.5-.5M8 3a6 6 0 1 0 .001 12A6 6 0 0 0 8 3"></path>
+    </svg>
+  </span>
+  <span class="sr-only">Timed</span>
+`;
+
+const ENDLESS_MODE_ICON = `
+  <span class="endless-mode-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" focusable="false">
+      <path d="M18 8c-2.2 0-3.6 1.4-6 4-2.4-2.6-3.8-4-6-4-2.2 0-4 1.8-4 4s1.8 4 4 4c2.2 0 3.6-1.4 6-4 2.4 2.6 3.8 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4z"></path>
+    </svg>
+  </span>
+  <span class="sr-only">Endless</span>
+`;
+
 class Hud {
   constructor(elements) {
     this.elements = elements;
@@ -2098,8 +2064,19 @@ class Hud {
   }
 
   renderModeButton(mode) {
+    if (this.elements.modeButton.dataset.mode === mode) {
+      return;
+    }
+
     this.elements.modeButton.dataset.mode = mode;
-    this.elements.modeButton.setAttribute("aria-label", "Toggle mode");
+    this.elements.modeButton.setAttribute("aria-label", mode === "timed" ? "Timed" : "Endless");
+
+    if (mode === "timed") {
+      this.elements.modeButton.innerHTML = TIMED_MODE_ICON;
+      return;
+    }
+
+    this.elements.modeButton.innerHTML = ENDLESS_MODE_ICON;
   }
 }
 
@@ -3576,7 +3553,8 @@ const menuElements = {
   restartButton: document.getElementById("menuRestartButton"),
   openButtonDesktop: document.getElementById("menuOpenButtonDesktop"),
   openButtonMobile: document.getElementById("menuOpenButtonMobile"),
-  modeToggleButton: document.getElementById("menuModeToggleButton"),
+  modeTimedButton: document.getElementById("menuModeTimed"),
+  modeEndlessButton: document.getElementById("menuModeEndless"),
   aiCountInput: document.getElementById("aiCountInput"),
   aiCountLabelPreview: document.getElementById("aiCountLabelPreview"),
   aiCountValue: document.getElementById("aiCountValue"),
@@ -3651,7 +3629,8 @@ function applyConfigToMenu(options) {
 function syncMenuUi() {
   renderAiCountPreview(Number(menuElements.aiCountInput.value));
   menuElements.tickRateValue.textContent = menuElements.tickRateInput.value;
-  renderModeToggle(menuElements.modeToggleButton, menuState.mode);
+  menuElements.modeTimedButton.classList.toggle("active", menuState.mode === GAME_MODE.TIMED);
+  menuElements.modeEndlessButton.classList.toggle("active", menuState.mode === GAME_MODE.ENDLESS);
 
   const aiCountChanged =
     menuState.editingInGame &&
@@ -3677,7 +3656,8 @@ function syncMenuUi() {
   menuElements.aiCountInput.disabled = false;
   menuElements.gridSizeSelect.disabled = false;
   menuElements.suppressionToggle.disabled = menuState.editingInGame;
-  menuElements.modeToggleButton.disabled = menuState.editingInGame;
+  menuElements.modeTimedButton.disabled = menuState.editingInGame;
+  menuElements.modeEndlessButton.disabled = menuState.editingInGame;
 }
 
 function renderAiCountPreview(aiCount) {
@@ -3694,10 +3674,6 @@ function renderAiCountPreview(aiCount) {
     .join("");
   menuElements.aiCountLabelPreview.innerHTML = swatches;
   menuElements.aiCountValue.textContent = String(aiCount);
-}
-
-function renderModeToggle(button, mode) {
-  button.dataset.mode = mode;
 }
 
 function openMenu() {
@@ -3756,8 +3732,12 @@ function restartConfiguredGame() {
 menuElements.aiCountInput.addEventListener("input", syncMenuUi);
 menuElements.tickRateInput.addEventListener("input", syncMenuUi);
 menuElements.gridSizeSelect.addEventListener("change", syncMenuUi);
-menuElements.modeToggleButton.addEventListener("click", () => {
-  menuState.mode = menuState.mode === GAME_MODE.TIMED ? GAME_MODE.ENDLESS : GAME_MODE.TIMED;
+menuElements.modeTimedButton.addEventListener("click", () => {
+  menuState.mode = GAME_MODE.TIMED;
+  syncMenuUi();
+});
+menuElements.modeEndlessButton.addEventListener("click", () => {
+  menuState.mode = GAME_MODE.ENDLESS;
   syncMenuUi();
 });
 menuElements.continueButton.addEventListener("click", continueConfiguredGame);

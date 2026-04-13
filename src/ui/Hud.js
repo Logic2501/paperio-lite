@@ -35,7 +35,7 @@ export class Hud {
     this.elements.territoryValue.textContent = formatPercent(share);
     this.elements.timerValue.textContent =
       state.mode === "timed" ? formatTime(state.remainingSeconds) : "ENDLESS";
-    this.elements.modeButton.textContent = state.mode === "timed" ? "Timed" : "Endless";
+    this.renderModeButton(state.mode);
     this.elements.pauseButton.classList.toggle("is-paused", state.paused && !state.matchComplete);
     this.elements.pauseButton.disabled = state.matchComplete;
     this.renderLeaderboard(state.rankings, state.playerMap, state.percentages);
@@ -115,5 +115,10 @@ export class Hud {
     }
     this.elements.centerCountdown.textContent = text;
     this.elements.centerCountdown.classList.remove("hidden");
+  }
+
+  renderModeButton(mode) {
+    this.elements.modeButton.dataset.mode = mode;
+    this.elements.modeButton.setAttribute("aria-label", "Toggle mode");
   }
 }

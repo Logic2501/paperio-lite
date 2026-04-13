@@ -89,15 +89,7 @@ body.menu-open .playfield-card {
 }
 
 .menu-mode-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.menu-mode-button.active {
-  background: rgba(31, 143, 219, 0.12);
-  color: #0d5db8;
-  box-shadow: inset 0 0 0 1px rgba(31, 143, 219, 0.22);
+  display: block;
 }
 
 .menu-custom-panel {
@@ -150,6 +142,27 @@ body.menu-open .playfield-card {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   font: inherit;
+}
+
+.ai-count-label-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 88px;
+  min-height: 24px;
+  flex-wrap: wrap;
+}
+
+.ai-count-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 2px solid rgba(49, 36, 30, 0.42);
+  background: var(--ai-preview-color);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 1px 2px rgba(49, 36, 30, 0.12);
 }
 
 .menu-toggle-row {
@@ -218,8 +231,55 @@ h1 {
 }
 
 .menu-open-button {
-  min-width: 110px;
+  min-width: 52px;
   justify-self: center;
+}
+
+.mode-toggle-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  padding: 4px;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.mode-toggle-button::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-0.5px);
+  background: rgba(50, 38, 31, 0.16);
+  pointer-events: none;
+}
+
+.mode-toggle-segment {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  min-height: 40px;
+  color: rgba(50, 38, 31, 0.42);
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.mode-toggle-button[data-mode="timed"] .mode-toggle-segment[data-segment="timed"],
+.mode-toggle-button[data-mode="endless"] .mode-toggle-segment[data-segment="endless"] {
+  background: rgba(31, 143, 219, 0.16);
+  color: #0d5db8;
+  box-shadow: inset 0 0 0 1px rgba(31, 143, 219, 0.18);
+}
+
+.mode-toggle-button[data-mode="timed"] .mode-toggle-segment[data-segment="endless"],
+.mode-toggle-button[data-mode="endless"] .mode-toggle-segment[data-segment="timed"] {
+  background: transparent;
+  color: rgba(50, 38, 31, 0.42);
 }
 
 .compact-territory {
@@ -284,6 +344,9 @@ button:disabled {
 }
 
 .restart-icon,
+.menu-icon,
+.timed-mode-icon,
+.endless-mode-icon,
 .play-icon,
 .continue-lock-indicator {
   position: relative;
@@ -297,9 +360,43 @@ button:disabled {
   display: block;
   width: 100%;
   height: 100%;
+  fill: currentColor;
+}
+
+.menu-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.9;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.timed-mode-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.endless-mode-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.timed-mode-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.endless-mode-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -874,6 +971,14 @@ button:disabled {
     line-height: 1;
     justify-self: stretch;
     align-self: stretch;
+  }
+
+  #modeButton {
+    padding: 2px;
+  }
+
+  #modeButton .mode-toggle-segment {
+    min-height: 22px;
   }
 
   #restartButton {
